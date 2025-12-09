@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  spark-nlp-app:
+    build: .
+    container_name: spark-nlp-icd-diagnosis
+    ports:
+      - "8888:8888"  # Jupyter Notebook
+      - "4040:4040"  # Spark UI
+      - "7077:7077"  # Spark Master
+      - "8080:8080"  # Spark Web UI
+    volumes:
+      - .:/app  # Mount current directory to container
+      - spark-data:/opt/spark/data
+    environment:
+      - PYSPARK_PYTHON=python3
+      - SPARK_LOCAL_IP=127.0.0.1
+      - SPARK_LOCAL_HOSTNAME=127.0.0.1
+    networks:
+      - spark-network
+
+volumes:
+  spark-data:
+
+networks:
+  spark-network:
+    driver: bridge
