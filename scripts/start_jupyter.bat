@@ -1,6 +1,0 @@
-@echo off
-echo Activating virtual environment...
-call .venv\Scripts\activate.bat
-
-echo Starting Jupyter Lab...
-call .venv\Scripts\jupyter-lab.exe

@@ -13,9 +13,9 @@ Original file is located at
 ---
 
 # Automated ICD-10 Diagnosis NLP Spark RSUD Datu Sanggul
-## Ekstraksi Diagnosis Otomatis dari Narasi dan Struktur Catatan Medis Pasien RSUD Datu Sanggul
+## Ekstraksi Diagnosis Otomatis dari Catatan Medis Pasien RSUD Datu Sanggul
 
-**Menggunakan Apache Spark + Spark NLP + ICD-10 Coding berbasis dataset e-klaim**
+**Menggunakan Apache Spark + Spark NLP + ICD-10 Coding**
 
 ---
 
@@ -36,8 +36,8 @@ Original file is located at
 | **BPJS Reject Rate** | Diagnosis ≠ ICD-10 | **15-20% klaim ditolak** |
 
 ### **TUJUAN PROYEK**
-1. **Ekstraksi otomatis** diagnosis dari **24.806 rekam medis** menggunakan **narasi medis dan diagnosis terstruktur**
-2. **Mapping ICD-10** untuk **17 poliklinik RSUD** dengan menggunakan **dataset ICD-10 e-klaim resmi**
+1. **Ekstraksi otomatis** diagnosis dari **24.806 rekam medis**
+2. **Mapping ICD-10** untuk **17 poliklinik RSUD**
 3. **Real-time analytics** pola penyakit
 4. **Optimasi klaim BPJS** & **pelaporan Dinas Kesehatan**
 
@@ -92,34 +92,30 @@ Load dataset CSV rekam medis dari direktori database
 from google.colab import drive
 
 
+
 drive.mount('/content/drive')
 
 csv_path = "/content/drive/MyDrive/Colab Notebooks/dataset/diagnosis_icd_2025.csv"
-icd10_csv_path = "/content/drive/MyDrive/Colab Notebooks/dataset/ICD-10 e-klaim.csv"
 
 print("Loading CSV data from:", csv_path)
+
 df = pd.read_csv(csv_path)
-
-print("Loading ICD-10 e-klaim data from:", icd10_csv_path)
-icd10_df = pd.read_csv(icd10_csv_path)
-
 # Tampilkan info data
 print(f"Loaded {len(df)} records")
-print(f"Loaded {len(icd10_df)} ICD-10 records")
 
 print(df.columns)
-print(icd10_df.columns)
 
 print(df.head(3))
-print(icd10_df[['CODE', 'DISPLAY']].head(10))  # Menampilkan hanya kolom penting dari ICD-10
 
 # Convert pandas ke Spark DataFrame
 spark_df = spark.createDataFrame(df)
-icd10_spark_df = spark.createDataFrame(icd10_df)
 
 spark_df.printSchema()
-icd10_spark_df.printSchema()
 
+# Build Spark NLP Pipeline untuk Ekstraksi Diagnosis (NER Clinical)
+# The definitions for DocumentAssembler, Tokenizer, NerDLModel, and NerConverter
+# are now consolidated in the cell below (a00f57e5) to avoid redundancy
+# and handle the persistent pretrained model download issue.
 
 """# Tampilkan info data"""
 
@@ -135,8 +131,8 @@ spark_df.printSchema()
 """## 4. Build Spark NLP Pipeline
 
 Build pipeline untuk ekstraksi diagnosis (NER Clinical)
-# Build Spark NLP Pipeline untuk Ekstraksi Diagnosis dari Narasi Medis dan Diagnosis Terstruktur (NER Clinical)
 
+# Build Spark NLP Pipeline untuk Ekstraksi Diagnosis (NER Clinical)
 """
 
 # Import annotators
@@ -157,19 +153,10 @@ tokenizer = Tokenizer() \
 from sparknlp.base import DocumentAssembler
 from sparknlp.annotator import Tokenizer, NerDLModel, NerConverter, WordEmbeddingsModel
 from pyspark.ml import Pipeline
-from pyspark.sql.functions import col, concat_ws, regexp_replace, lower
-from pyspark.sql.types import StructType, StructField, StringType
 
-# Prepare combined input dari kedua kolom narasi medis
-# Gabungkan rekam_medis_narasi dan diagnosis_structured untuk deteksi NER
-spark_df = spark_df.withColumn("combined_text",
-                              concat_ws(" ",
-                                       regexp_replace(col("rekam_medis_narasi"), "[\\r\\n]+", " "),
-                                       regexp_replace(col("diagnosis_structured"), "[\\r\\n]+", " ")))
-
-# Document Assembler - gunakan kolom combined_text
+# Document Assembler
 document_assembler = DocumentAssembler() \
-    .setInputCol("combined_text") \
+    .setInputCol("rekam_medis_narasi") \
     .setOutputCol("document")
 
 # Tokenizer
@@ -491,79 +478,17 @@ icd10_map = {
     "hay fever": "J30.1"
 }
 
-# Membuat kamus mapping dari dataset ICD-10 e-klaim
-icd10_mapping = {}
-for index, row in icd10_df.iterrows():
-    code = row['CODE']
-    display = row['DISPLAY']
-    icd10_mapping[display.lower()] = code
-
-# Fungsi untuk mapping ICD-10 dari dataset e-klaim
-def map_to_icd10_from_dataset(text, icd10_dict):
-    """
-    Fungsi untuk mencari potongan teks yang cocok dengan deskripsi ICD-10
-    dan mengembalikan kode ICD-10 yang sesuai
-    """
-    if not text or pd.isna(text):
-        return []
-    
+def map_to_icd10(entities, mapping):
     codes = []
-    text_lower = str(text).lower()
-    
-    # Cek untuk setiap deskripsi dalam kamus ICD-10
-    for description, code in icd10_dict.items():
-        if description in text_lower:
-            codes.append(code)
-    
-    # Jika tidak ditemukan kecocokan eksak, coba fuzzy matching
-    if not codes:
-        for description, code in icd10_dict.items():
-            # Cek apakah ada kata kunci dari deskripsi ICD-10 dalam teks
-            desc_words = description.split()
-            # Gunakan minimal 2 kata dari deskripsi untuk pencocokan
-            if len(desc_words) > 1:
-                matched_words = [word for word in desc_words if word in text_lower]
-                if len(matched_words) >= min(2, len(desc_words)):  # Minimal 2 kata yang cocok
-                    codes.append(code)
-    
-    return list(set(codes))  # Hapus duplikat
-# Fungsi untuk mapping ICD-10 dari kedua kolom (narasi dan structured) berdasarkan dataset ICD-10 e-klaim
-def map_to_icd10_combined(narasi_text, structured_text, icd10_dict):
-    """
-    Fungsi untuk mencari ICD-10 dari kedua kolom teks (narasi dan structured)
-    menggunakan dataset ICD-10 e-klaim yang telah dipetakan
-    """
-
-    codes = []
-    
-    # Mapping dari narasi
-    if narasi_text and not pd.isna(narasi_text):
-        codes.extend(map_to_icd10_from_dataset(narasi_text, icd10_dict))
-    
-    # Mapping dari structured
-    if structured_text and not pd.isna(structured_text):
-        codes.extend(map_to_icd10_from_dataset(structured_text, icd10_dict))
-    
-    # Tambahkan mapping dari kamus lama sebagai fallback
-    if narasi_text and not pd.isna(narasi_text):
-        narasi_lower = str(narasi_text).lower()
-        for key in icd10_map:
-            if key in narasi_lower:
-                codes.append(icd10_map[key])
-    
-    if structured_text and not pd.isna(structured_text):
-        structured_lower = str(structured_text).lower()
-        for key in icd10_map:
-            if key in structured_lower:
-                codes.append(icd10_map[key])
-    
+    if entities:
+        for entity in entities:
+            entity_lower = entity.lower()
+            for key in mapping:
+                if key in entity_lower:
+                    codes.append(mapping[key])
     return list(set(codes))
-# Apply ICD-10 mapping dari kedua kolom rekam_medis_narasi dan diagnosis_structured
-results_pd['icd10_codes'] = results_pd.apply(
-    lambda row: map_to_icd10_combined(row['rekam_medis_narasi'], row['diagnosis_structured'], icd10_mapping),
-    axis=1
-)
 
+results_pd['icd10_codes'] = results_pd['entities_detected'].apply(lambda x: map_to_icd10(x, icd10_map))
 
 print("\nSample ICD-10 codes detected:")
 print(results_pd[['nm_pasien', 'entities_detected', 'icd10_codes']].head(3))
@@ -584,15 +509,12 @@ print(f"\nTotal records processed: {total_records}")
 print(f"Total entities detected: {total_entities}")
 print(f"Average entities per record: {avg_entities:.2f}")
 
-# Evaluasi sederhana perbandingan diagnosis ground truth dengan entitas hasil ekstraksi dari kedua kolom
+# Evaluasi sederhana perbandingan diagnosis ground truth dengan entitas hasil ekstraksi
 def simple_match(ground_truth, entities):
     if not ground_truth or not entities:
         return False
     gt_lower = str(ground_truth).lower()
-    if isinstance(entities, list):
-        return any(ent.lower() in gt_lower for ent in entities if ent is not None)
-    else:
-        return False
+    return any(ent.lower() in gt_lower for ent in entities)
 
 results_pd['match_ground_truth'] = results_pd.apply(
     lambda row: simple_match(row['diagnosis_ground_truth'], row['entities_detected']),
@@ -602,84 +524,29 @@ results_pd['match_ground_truth'] = results_pd.apply(
 accuracy = results_pd['match_ground_truth'].mean() * 100
 print(f"Simple matching accuracy: {accuracy:.2f}%")
 
-# Evaluasi tambahan untuk membandingkan antara diagnosis_structured dan hasil ekstraksi
-def compare_diagnosis_structured(ground_truth, structured_diagnosis):
-    if not ground_truth or not structured_diagnosis:
-        return False
-    gt_lower = str(ground_truth).lower()
-    structured_lower = str(structured_diagnosis).lower()
-    return structured_lower in gt_lower or gt_lower in structured_lower
-
-results_pd['match_diagnosis_structured'] = results_pd.apply(
-    lambda row: compare_diagnosis_structured(row['diagnosis_ground_truth'], row['diagnosis_structured']),
-    axis=1
-)
-
-structured_accuracy = results_pd['match_diagnosis_structured'].mean() * 100
-print(f"Diagnosis structured matching accuracy: {structured_accuracy:.2f}%")
-
-# Evaluasi kombinasi: apakah entitas terdeteksi cocok dengan diagnosis_ground_truth ATAU diagnosis_structured cocok
-results_pd['combined_match'] = results_pd.apply(
-    lambda row: simple_match(row['diagnosis_ground_truth'], row['entities_detected']) or
-                compare_diagnosis_structured(row['diagnosis_ground_truth'], row['diagnosis_structured']),
-    axis=1
-)
-
-combined_accuracy = results_pd['combined_match'].mean() * 100
-print(f"Combined matching accuracy (NER + structured): {combined_accuracy:.2f}%")
-# Validasi hasil deteksi ICD-10
-print(f"\nValidasi hasil deteksi ICD-10:")
-
-# Fungsi validasi untuk memeriksa apakah kode ICD-10 yang dihasilkan valid berdasarkan dataset e-klaim
-def validate_icd10_codes(icd10_codes, icd10_reference_df):
-    """
-    Fungsi untuk memvalidasi apakah kode ICD-10 yang dihasilkan valid
-    berdasarkan dataset ICD-10 e-klaim
-    """
-    if not icd10_codes or not isinstance(icd10_codes, list):
-        return [], []
-    
-    valid_codes = []
-    invalid_codes = []
-    
-    # Ambil semua kode ICD-10 yang valid dari dataset referensi
-    valid_icd_codes = set(icd10_reference_df['CODE'].astype(str))
-    
-    for code in icd10_codes:
-        code_str = str(code)
-        if code_str in valid_icd_codes:
-            valid_codes.append(code_str)
-        else:
-            invalid_codes.append(code_str)
-    
-    return valid_codes, invalid_codes
-
-# Validasi hasil ICD-10 terhadap dataset e-klaim
-results_pd['valid_icd10_codes'], results_pd['invalid_icd10_codes'] = zip(*results_pd['icd10_codes'].apply(
-    lambda codes: validate_icd10_codes(codes, icd10_df) if codes else ([], [])
-))
-
-# Hitung statistik validasi
-total_valid_codes = sum(len(codes) for codes in results_pd['valid_icd10_codes'])
-total_invalid_codes = sum(len(codes) for codes in results_pd['invalid_icd10_codes'])
-total_records_with_codes = len(results_pd[results_pd['icd10_codes'].apply(lambda x: len(x) > 0)])
-
-print(f"Total rekam medis dengan kode ICD-10: {total_records_with_codes}")
-print(f"Total kode ICD-10 valid: {total_valid_codes}")
-print(f"Total kode ICD-10 tidak valid: {total_invalid_codes}")
-
-# Tampilkan beberapa contoh hasil validasi
-print(f"\nContoh hasil validasi (5 pertama):")
+# Tampilkan beberapa contoh hasil ekstraksi
+print(f"\nSample results:")
 for i in range(min(5, len(results_pd))):
     print(f"\nPatient: {results_pd.iloc[i]['nm_pasien']}")
     print(f"Ground Truth: {results_pd.iloc[i]['diagnosis_ground_truth']}")
     print(f"Detected: {results_pd.iloc[i]['entities_detected']}")
     print(f"ICD-10: {results_pd.iloc[i]['icd10_codes']}")
-    print(f"Valid: {results_pd.iloc[i]['valid_icd10_codes']}")
-    print(f"Invalid: {results_pd.iloc[i]['invalid_icd10_codes']}")
 
+"""# Evaluasi sederhana perbandingan diagnosis ground truth dengan entitas hasil ekstraksi"""
 
-# Bagian ini dihapus karena duplikat
+def simple_match(ground_truth, entities):
+    if not ground_truth or not entities:
+        return False
+    gt_lower = ground_truth.lower()
+    return any(ent.lower() in gt_lower for ent in entities)
+
+results_pd['match_ground_truth'] = results_pd.apply(
+    lambda row: simple_match(row['diagnosis_ground_truth'], row['entities_detected']),
+    axis=1
+)
+
+accuracy = results_pd['match_ground_truth'].mean() * 100
+print(f"Simple matching accuracy: {accuracy:.2f}%")
 
 """## 9. Visualisasi Hasil
 
@@ -730,6 +597,7 @@ results_pd.to_json(output_json, orient='records', indent=2)
 print(f"✓ Individual files saved:")
 print(f"  - CSV: {output_csv}")
 print(f"  - JSON: {output_json}")
+
 # METADATA UNTUK MODEL HUB (modelhub_metadata.json)
 modelhub_metadata = {
     "model_name": "rsud_datu_sanggul_icd10_extractor",
@@ -748,9 +616,8 @@ modelhub_metadata = {
         "NerDLModel(ner_dl_clinical)",
         "NerConverter"
     ],
-    "icd10_codes_total": len(icd10_map) + len(icd10_mapping),
+    "icd10_codes_total": len(icd10_map),
     "total_records_processed": len(results_pd),
-
     "accuracy_simple_matching": float(results_pd['match_ground_truth'].mean() * 100) if 'match_ground_truth' in results_pd.columns else 0.0,
     "total_entities_detected": int(total_entities),
     "dataset_info": {
@@ -767,7 +634,7 @@ modelhub_metadata = {
         "language": "en",
         "entities_detected": ["PROBLEM", "TREATMENT", "TEST", "PROCEDURE", "DRUG"],
         "custom_icd10_mapping": True,
-        "icd10_codes_count": len(icd10_map) + len(icd10_mapping)
+        "icd10_codes_count": len(icd10_map)
     },
     "evaluation_metrics": {
         "total_records": len(results_pd),
@@ -794,17 +661,15 @@ with open("modelhub_metadata.json", "w") as f:
 print(f"✓ Metadata saved: modelhub_metadata.json")
 
 # PIPELINE CONFIG (pipeline_config.json)
-# PIPELINE CONFIG (pipeline_config.json) - Updated to reflect dual source and ICD-10 e-klaim integration
 
 pipeline_config = {
-
     "pipeline_name": "rsud_icd10_pipeline",
-    "input_columns": ["rekam_medis_narasi", "diagnosis_structured"],
+    "input_columns": ["rekam_medis_narasi"],
     "output_columns": ["entities_detected", "icd10_codes"],
     "stages": [
         {
             "name": "DocumentAssembler",
-            "input": ["combined_text"],  # Karena kita gabungkan dua kolom
+            "input": ["rekam_medis_narasi"],
             "output": ["document"]
         },
         {
@@ -825,7 +690,7 @@ pipeline_config = {
         }
     ],
     "postprocessing": {
-        "icd10_mapping": f"icd10_mapping dictionary from ICD-10 e-klaim ({len(icd10_mapping)} codes) + fallback icd10_map ({len(icd10_map)} codes)",
+        "icd10_mapping": f"icd10_map dictionary ({len(icd10_map)} codes)",
         "poliklinik_filtering": "17 RSUD Datu Sanggul specialties supported"
     }
 }
@@ -849,7 +714,7 @@ evaluation_report = f"""# RSUD Datu Sanggul ICD-10 Extraction Evaluation Report
 ## Model Performance
 - **Pretrained Model**: ner_dl_clinical (Spark NLP)
 - **Pipeline Stages**: 4 stages (DocumentAssembler → NerConverter)
-- **ICD-10 Mapping**: {len(icd10_map) + len(icd10_mapping)} codes across 17 poliklinik specialties (from custom mapping + ICD-10 e-klaim dataset)
+- **ICD-10 Mapping**: {len(icd10_map)} codes across 17 poliklinik specialties
 
 ## Top Detected Entities
 """ + f"""
@@ -861,8 +726,8 @@ with open("evaluation_report.md", "w") as f:
     f.write(evaluation_report)
 
 print(f"✓ Evaluation report saved: evaluation_report.md")
-# ICD-10 MAPPING REFERENCE (icd10_reference.json) - Updated with e-klaim dataset integration
 
+# ICD-10 MAPPING REFERENCE (icd10_reference.json)
 
 icd10_reference = {
     "total_codes": len(icd10_map),
@@ -964,8 +829,7 @@ HASIL YANG DICAPAI:
 ├─ Total Rekam Medis Diproses: {total_records:,}
 ├─ Total Entitas Terdeteksi: {total_entities:,}
 ├─ Rata-rata Entitas/Rekam: {avg_entities:.2f}
-├─ Akurasi Matching: {accuracy:.1f}%
-└─ Kode ICD-10: {len(icd10_map) + len(icd10_mapping)} (dari kamus kustom + dataset ICD-10 e-klaim)
+└─ Akurasi Matching: {accuracy:.1f}%
 
 MANFAAT IMPLEMENTASI:
 ├─  **BPJS**: Klaim approve ↑20%, overtime coding ↓100%

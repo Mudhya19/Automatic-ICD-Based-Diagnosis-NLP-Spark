@@ -182,7 +182,7 @@ ORDER BY
 
 ```bash
 # Jalankan script setup otomatis
-bash setup.sh
+bash scripts/setup.sh
 ```
 
 ### Instalasi Manual
@@ -220,8 +220,7 @@ docker-compose up -d
 ## 9. Struktur Proyek
 
 ```
-spark-nlp/
-├── setup.sh                          # Script setup otomatis
+Automatic-ICD-Based-Diagnosis-NLP-Spark/
 ├── automated_icd_diagnosis.ipynb    # Notebook utama
 ├── requirements.txt                  # Dependencies
 ├── Dockerfile                      # Docker configuration
@@ -229,6 +228,8 @@ spark-nlp/
 ├── Makefile                        # Task automation
 ├── README.md                       # Dokumentasi ini
 ├── INSTRUCTION-AUTOMATED-ICD-DIAGNOSIS.md  # Dokumentasi teknis
+├── .env                            # Environment variables
+├── .gitignore                      # Files to ignore in Git
 ├── database/
 │   └── diagnosis_icd_2025.csv      # Data CSV hasil query SIMRS
 ├── output/
@@ -237,9 +238,14 @@ spark-nlp/
 ├── models/
 │   └── (model NLP akan di-download otomatis)
 ├── notebooks/
-│   └── example.ipynb               # Contoh notebook
+│   └── example.py                  # Contoh script
 ├── docs/
 │   └── INSTRUCTION-AUTOMATED-ICD-DIAGNOSIS.md  # Dokumentasi teknis
+├── scripts/                        # Script tambahan
+│   └── setup.sh                    # Script setup otomatis
+├── image/                          # Gambar-gambar untuk dokumentasi
+├── test/                           # File-file pengujian
+├── config/                         # File-file konfigurasi
 └── src/
     └── __init__.py                 # Python package
 ```

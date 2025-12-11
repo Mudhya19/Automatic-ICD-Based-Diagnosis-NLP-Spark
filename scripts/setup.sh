@@ -4,8 +4,7 @@
 # AUTOMATED SETUP SCRIPT - BIG DATA ANALYTICS PROJECT
 # Automated ICD Diagnosis Extraction from Medical Records
 # RSUD Datu Sanggul
-# ============================================================================
-# Kompatibel dengan: Linux, macOS, Windows (WSL2)
+# Modified version for automated execution without user input
 # ============================================================================
 
 set -e  # Exit on error
@@ -73,11 +72,14 @@ check_prerequisites() {
     local missing_deps=0
     
     # Check Python
-    if command -v python3 &> /dev/null; then
+    if command -v python &> /dev/null; then
+        PYTHON_VERSION=$(python --version 2>&1 | awk '{print $2}')
+        print_success "Python found: $PYTHON_VERSION"
+    elif command -v python3 &> /dev/null; then
         PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
         print_success "Python 3 found: $PYTHON_VERSION"
     else
-        print_error "Python 3 not found"
+        print_error "Python not found"
         print_info "Please install Python 3.8 or higher"
         missing_deps=$((missing_deps + 1))
     fi
@@ -100,11 +102,14 @@ check_prerequisites() {
     fi
     
     # Check pip
-    if command -v pip3 &> /dev/null; then
+    if command -v pip &> /dev/null; then
+        PIP_VERSION=$(pip --version)
+        print_success "$PIP_VERSION"
+    elif command -v pip3 &> /dev/null; then
         PIP_VERSION=$(pip3 --version)
         print_success "$PIP_VERSION"
     else
-        print_error "pip3 not found"
+        print_error "pip not found"
         missing_deps=$((missing_deps + 1))
     fi
     
@@ -168,7 +173,7 @@ install_system_dependencies() {
                     git \
                     wget \
                     curl \
-                    jdk11-openjdk
+                    jdk1-openjdk
                     
                 print_success "System dependencies installed (pacman)"
             fi
@@ -219,19 +224,17 @@ setup_virtualenv() {
     
     if [ -d ".venv" ]; then
         print_warning "Virtual environment already exists"
-        read -p "Do you want to recreate it? (y/n) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            rm -rf .venv
-            print_info "Removed existing virtual environment"
-        else
-            print_info "Using existing virtual environment"
-            return 0
-        fi
+        print_info "Removing existing virtual environment for fresh setup..."
+        rm -rf .venv
+        print_info "Removed existing virtual environment"
     fi
     
     print_info "Creating virtual environment..."
-    python3 -m venv .venv
+    if command -v python &> /dev/null; then
+        python -m venv .venv
+    else
+        python3 -m venv .venv
+    fi
     
     # Activate virtual environment
     if [[ "$OS" == "Windows" ]]; then
@@ -242,7 +245,11 @@ setup_virtualenv() {
         elif [ -f ".venv/bin/activate" ]; then
             print_warning "Unix-style virtual environment found on Windows. Recreating for Windows compatibility..."
             rm -rf .venv
-            python3 -m venv .venv
+            if command -v python &> /dev/null; then
+                python -m venv .venv
+            else
+                python3 -m venv .venv
+            fi
             source .venv/Scripts/activate
         else
             print_error "Virtual environment activation script not found for Windows"
@@ -265,7 +272,11 @@ setup_virtualenv() {
     
     # Upgrade pip, setuptools, wheel
     print_info "Upgrading pip, setuptools, and wheel..."
-    pip install --upgrade pip setuptools wheel
+    if command -v python &> /dev/null; then
+        python -m pip install --upgrade pip setuptools wheel
+    else
+        pip install --upgrade pip setuptools wheel
+    fi
     
     print_success "Virtual environment setup complete"
 }
@@ -286,7 +297,11 @@ install_python_dependencies() {
         elif [ -f ".venv/bin/activate" ]; then
             print_warning "Unix-style virtual environment found on Windows. Recreating for Windows compatibility..."
             rm -rf .venv
-            python3 -m venv .venv
+            if command -v python &> /dev/null; then
+                python -m venv .venv
+            else
+                python3 -m venv .venv
+            fi
             source .venv/Scripts/activate
         else
             print_error "Virtual environment activation script not found for Windows"
@@ -323,7 +338,11 @@ install_python_dependencies() {
     
     for package in "${packages[@]}"; do
         print_info "Installing: $package"
-        pip install "$package"
+        if command -v python &> /dev/null; then
+            python -m pip install "$package"
+        else
+            pip install "$package"
+        fi
     done
     
     print_success "All Python dependencies installed"
@@ -338,17 +357,14 @@ clone_sparknlp_repo() {
     
     if [ -d "spark-nlp" ]; then
         print_warning "spark-nlp directory already exists"
-        read -p "Do you want to pull latest changes? (y/n) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            cd spark-nlp
-            git pull origin master
-            cd ..
-            print_success "spark-nlp repository updated"
-        fi
+        print_info "Pulling latest changes..."
+        cd spark-nlp
+        git pull origin master
+        cd ..
+        print_success "spark-nlp repository updated"
     else
         print_info "Cloning spark-nlp repository..."
-        git clone --depth 1 https://github.com/JohnSnowLabs/spark-nlp.git
+        git clone --depth 1 --config core.longpaths=true https://github.com/JohnSnowLabs/spark-nlp.git
         print_success "spark-nlp repository cloned"
     fi
 }
@@ -367,6 +383,9 @@ setup_project_directories() {
     mkdir -p models
     mkdir -p src
     mkdir -p notebooks
+    mkdir -p image
+    mkdir -p test
+    mkdir -p config
     
     print_success "Project directories created"
     
@@ -376,9 +395,9 @@ setup_project_directories() {
         
         cat > database/diagnosis_icd_2025.csv << 'EOF'
 id_pasien,nm_pasien,jk,umur_pasien,id_kunjungan,tgl_registrasi,nm_dokter,rekam_medis_narasi,diagnosis_structured
-153284,H. KURSANI Tn,L,71,2025/01/01/000004,2025-01-01,dr. Resti Riyandina Mujiarto,"Patient: H. KURSANI Tn, Age: 71 years old. Chief Complaint: mimisan sejak jam 22.00 td malam, perdarahan aktif (+) sebelah kiri. mual (+) muntah (+) riw HT (+). Physical Examination: Mata: ca (-/-) si (-/-)isokor (+/+) cowong (-/-) Leher: kaku kuduk (-) Thoraks: simetris. Retraksi (-) Pulmo: rhonki - / - - / - - / - wheezing - / - - / - - / - Cor s1 s2 reguler. Abd: BU + N. Timpani. Nyeri tekan: - / - / - - / - / - - / - / - CVA (-/-) Defans muskular (-) Hepatomegali (-) Splenomegali (-). Assessment: HT emergency epistaksis posterior. Diagnosis: Essential (primary) hypertension, Epistaxis.","Essential (primary) hypertension, Epistaxis"
-153285,Siti Nurhaliza,P,55,2025/01/02/000005,2025-01-02,dr. Bambang Sutrisno,"Patient: Siti Nurhaliza, Age: 55 years old. Chief Complaint: Shortness of breath for 1 day, cough, dan demam. Physical Examination: SpO2 92%, BP 165/100 mmHg, RR 22/min. Pulmo: Crackles bilateral, ronkhi. Abd: BU normal, tidak ada massa. Cor: S1 S2 reguler. Assessment: Community-acquired pneumonia dengan tanda vital tidak stabil. Diagnosis: Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus.","Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus"
-153286,Budi Santoso,L,45,2025/01/03/000006,2025-01-03,dr. Rina Widyaningsih,"Patient: Budi Santoso, Age: 45 years old. Chief Complaint: Post-operative follow-up from appendectomy. Physical Examination: Luka operasi baik, tidak ada infeksi, tanda vital stabil. Abd: Tidak nyeri, BU normal. Assessment: Status post-appendectomy day 3 dengan pemulihan baik. Diagnosis: Status post-appendectomy, Overweight, Hypertension.","Status post-appendectomy, Overweight, Hypertension"
+153284,H. KURSANI Tn,L,71,2025/01/01/0004,2025-01-01,dr. Resti Riyandina Mujiarto,"Patient: H. KURSANI Tn, Age: 71 years old. Chief Complaint: mimisan sejak jam 22.00 td malam, perdarahan aktif (+) sebelah kiri. mual (+) muntah (+) riw HT (+). Physical Examination: Mata: ca (-/-) si (-/-)isokor (+/+) cowong (-/-) Leher: kaku kuduk (-) Thoraks: simetris. Retraksi (-) Pulmo: rhonki - / - / - - / - wheezing - / - - / - - / - Cor s1 s2 reguler. Abd: BU + N. Timpani. Nyeri tekan: - / - / - - / - / - - / - / - CVA (-/-) Defans muskular (-) Hepatomegali (-) Splenomegali (-). Assessment: HT emergency epistaksis posterior. Diagnosis: Essential (primary) hypertension, Epistaxis.","Essential (primary) hypertension, Epistaxis"
+153285,Siti Nurhaliza,P,55,2025/01/02/00005,2025-01-02,dr. Bambang Sutrisno,"Patient: Siti Nurhaliza, Age: 55 years old. Chief Complaint: Shortness of breath for 1 day, cough, dan demam. Physical Examination: SpO2 92%, BP 165/100 mmHg, RR 22/min. Pulmo: Crackles bilateral, ronkhi. Abd: BU normal, tidak ada massa. Cor: S1 S2 reguler. Assessment: Community-acquired pneumonia dengan tanda vital tidak stabil. Diagnosis: Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus.","Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus"
+153286,Budi Santoso,L,45,2025/01/03/0006,2025-01-03,dr. Rina Widyaningsih,"Patient: Budi Santoso, Age: 45 years old. Chief Complaint: Post-operative follow-up from appendectomy. Physical Examination: Luka operasi baik, tidak ada infeksi, tanda vital stabil. Abd: Tidak nyeri, BU normal. Assessment: Status post-appendectomy day 3 dengan pemulihan baik. Diagnosis: Status post-appendectomy, Overweight, Hypertension.","Status post-appendectomy, Overweight, Hypertension"
 EOF
         
         print_success "Sample CSV created at: database/diagnosis_icd_2025.csv"
@@ -405,7 +424,7 @@ VENV_PATH=./.venv
 
 # Spark Configuration
 SPARK_HOME=$JAVA_HOME/spark
-SPARK_LOCAL_IP=127.0.0.1
+SPARK_LOCAL_IP=127.0.1
 SPARK_MASTER=local[*]
 
 # Spark NLP Configuration
@@ -485,40 +504,77 @@ verify_installation() {
     # Test Python imports
     print_info "Testing Python imports..."
     
-    python3 << 'PYTHON_TEST'
+    if command -v python &> /dev/null; then
+        python << 'PYTHON_TEST'
 import sys
-print(f"Python Version: {sys.version}")
+print("Python Version: {}".format(sys.version))
 
 try:
     import pyspark
-    print(f"✓ PySpark imported successfully")
+    print("PySpark imported successfully")
 except ImportError as e:
-    print(f"✗ PySpark import failed: {e}")
+    print("PySpark import failed: {}".format(e))
 
 try:
     import sparknlp
-    print(f"✓ SparkNLP imported successfully")
+    print("SparkNLP imported successfully")
 except ImportError as e:
-    print(f"✗ SparkNLP import failed: {e}")
+    print("SparkNLP import failed: {}".format(e))
 
 try:
     import pandas
-    print(f"✓ Pandas imported successfully")
+    print("Pandas imported successfully")
 except ImportError as e:
-    print(f"✗ Pandas import failed: {e}")
+    print("Pandas import failed: {}".format(e))
 
 try:
     import jupyter
-    print(f"✓ Jupyter imported successfully")
+    print("Jupyter imported successfully")
 except ImportError as e:
-    print(f"✗ Jupyter import failed: {e}")
+    print("Jupyter import failed: {}".format(e))
 
 try:
     import numpy
-    print(f"✓ NumPy imported successfully")
+    print("NumPy imported successfully")
 except ImportError as e:
-    print(f"✗ NumPy import failed: {e}")
+    print("NumPy import failed: {}".format(e))
 PYTHON_TEST
+    else
+        python3 << 'PYTHON_TEST'
+import sys
+print("Python Version: {}".format(sys.version))
+
+try:
+    import pyspark
+    print("PySpark imported successfully")
+except ImportError as e:
+    print("PySpark import failed: {}".format(e))
+
+try:
+    import sparknlp
+    print("SparkNLP imported successfully")
+except ImportError as e:
+    print("SparkNLP import failed: {}".format(e))
+
+try:
+    import pandas
+    print("Pandas imported successfully")
+except ImportError as e:
+    print("Pandas import failed: {}".format(e))
+
+try:
+    import jupyter
+    print("Jupyter imported successfully")
+except ImportError as e:
+    print("Jupyter import failed: {}".format(e))
+
+try:
+    import numpy
+    print("NumPy imported successfully")
+except ImportError as e:
+    print("NumPy import failed: {}".format(e))
+PYTHON_TEST
+    fi
     
     print_success "Installation verification complete"
 }
@@ -539,26 +595,12 @@ if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
         source .venv/Scripts/activate
     elif [ -f ".venv\\Scripts\\activate" ]; then
         source .venv\\Scripts\\activate
-    elif [ -f ".venv/bin/activate" ]; then
-        echo "Unix-style virtual environment found on Windows. Recreating for Windows compatibility..."
-        rm -rf .venv
-        python3 -m venv .venv
-        source .venv/Scripts/activate
     else
         echo "Virtual environment activation script not found for Windows"
         exit 1
     fi
 else
-    if [ -f ".venv/bin/activate" ]; then
-        source .venv/bin/activate
-    elif [ -f ".venv/Scripts/activate" ]; then
-        source .venv/Scripts/activate
-    elif [ -f ".venv\\Scripts\\activate" ]; then
-        source .venv\\Scripts\\activate
-    else
-        echo "Virtual environment activation script not found"
-        exit 1
-    fi
+    source .venv/bin/activate
 fi
 
 # Start Jupyter Lab
@@ -568,7 +610,7 @@ EOF
     
     chmod +x start_jupyter.sh
     
-    print_success "Quickstart script created: start_jupyter.sh"
+    print_success "Quickstart script created: scripts/start_jupyter.sh"
     
     # Also create Windows batch script
     cat > start_jupyter.bat << 'EOF_WINDOWS'
@@ -581,7 +623,7 @@ echo Starting Jupyter Lab...
 call .venv\Scripts\jupyter-lab.exe
 EOF_WINDOWS
     
-    print_success "Windows quickstart script created: start_jupyter.bat"
+    print_success "Windows quickstart script created: scripts/start_jupyter.bat"
 }
 
 # ============================================================================
@@ -592,9 +634,17 @@ display_summary() {
     print_header "SETUP COMPLETE - SUMMARY"
     
     echo -e "\n${GREEN}System Information:${NC}"
-    echo "  OS: $OS ($DISTRO)"
-    echo "  Python: $(python3 --version)"
-    echo "  Pip: $(pip3 --version)"
+    echo " OS: $OS ($DISTRO)"
+    if command -v python &> /dev/null; then
+        echo "  Python: $(python --version)"
+    else
+        echo "  Python: $(python3 --version)"
+    fi
+    if command -v pip &> /dev/null; then
+        echo "  Pip: $(pip --version)"
+    else
+        echo "  Pip: $(pip3 --version)"
+    fi
     
     echo -e "\n${GREEN}Project Structure:${NC}"
     echo "  Database: ./database/"
@@ -602,10 +652,13 @@ display_summary() {
     echo "  Models: ./models/"
     echo "  Source: ./src/"
     echo "  Notebooks: ./notebooks/"
+    echo "  Image: ./image/"
+    echo "  Test: ./test/"
+    echo "  Config: ./config/"
     
     echo -e "\n${GREEN}Key Packages Installed:${NC}"
-    echo "  - Apache Spark 3.5.0"
-    echo "  - Spark NLP 5.2.2"
+    echo " - Apache Spark 3.5.0"
+    echo " - Spark NLP 5.2"
     echo "  - Pandas, NumPy, Matplotlib, Seaborn"
     echo "  - Jupyter Lab"
     
@@ -619,10 +672,10 @@ display_summary() {
         echo "     source .venv/bin/activate"
     fi
     
-    echo "  3. Start Jupyter Lab:"
+    echo " 3. Start Jupyter Lab:"
     echo "     bash start_jupyter.sh  # Linux/Mac"
     echo "     .venv\\Scripts\\activate && jupyter lab     # Windows"
-    echo "  4. Open automated_icd_diagnosis.ipynb notebook"
+    echo " 4. Open automated_icd_diagnosis.ipynb notebook"
     echo "  5. Run cells sequentially to process medical records"
     
     echo -e "\n${GREEN}Documentation:${NC}"
@@ -644,8 +697,9 @@ main() {
     echo -e "${BLUE}"
     echo "========================================================================="
     echo "  AUTOMATED SETUP - BIG DATA ANALYTICS PROJECT"
-    echo "  Automated ICD Diagnosis Extraction"
+    echo " Automated ICD Diagnosis Extraction"
     echo "  RSUD Datu Sanggul"
+    echo "  (Automated version - no user input required)"
     echo "========================================================================="
     echo -e "${NC}\n"
     
@@ -658,20 +712,13 @@ main() {
     print_info "  1. Check system prerequisites"
     print_info "  2. Install system dependencies"
     print_info "  3. Setup Python virtual environment"
-    print_info "  4. Install Python packages"
+    print_info " 4. Install Python packages"
     print_info "  5. Clone Spark NLP repository"
     print_info "  6. Setup project directories"
     print_info "  7. Configure environment variables"
     print_info "  8. Verify installation"
     
-    echo ""
-    read -p "Continue with setup? (y/n) " -n 1 -r
-    echo
-    
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        print_info "Setup cancelled"
-        exit 0
-    fi
+    print_info "Continuing with setup (automated)..."
     
     # Execute setup steps
     check_prerequisites || {
