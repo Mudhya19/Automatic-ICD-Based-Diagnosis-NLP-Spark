@@ -276,18 +276,3 @@ Proyek ini menghasilkan:
 - File output dalam format CSV dan JSON
 
 ---
-
-## 12. Penyusun dan Penanggung Jawab
-
-**Nama Kelompok:** [Nama Kelompok Anda]
-**Anggota:**
-
-- [Nama Anggota 1]
-- [Nama Anggota 2]
-- [Nama Anggota 3]
-
-**Mata Kuliah:** Big Data Analytics
-**Dosen Pengampu:** [Nama Dosen]
-**Tahun Ajaran:** 2024/2025
-
----
