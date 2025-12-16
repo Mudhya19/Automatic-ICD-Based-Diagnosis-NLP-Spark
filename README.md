@@ -24,6 +24,7 @@ Rumah Sakit Umum Daerah (RSUD) Datu Sanggul melayani ribuan pasien setiap hari. 
 | Achievable | “Dengan data historis SIMRS dan infrastruktur Spark yang tersedia, dapatkah dilakukan pilot yang memproses minimal N berkas (mis. 5.000–20.000) untuk menghitung metrik akurasi dan waktu secara objektif?” atlassian​      |
 | Relevant   | “Apakah peningkatan akurasi dan penurunan waktu coding tersebut cukup relevan untuk menurunkan beban kerja coder dan mendukung kualitas proses administrasi/claim (melalui coding yang lebih konsisten)?” jmir+1​           |
 | Time-bound | “Dalam periode pilot selama 8–12 minggu (mis. Q1 2026), apakah sistem mencapai target: penurunan median waktu coding ≥ X% dan peningkatan agreement ICD ≥ Y% dibanding baseline?” samhsa+1​                                 |
+
 ---
 
 ## 2. Tujuan
@@ -76,37 +77,37 @@ Untuk referensi dataset serupa dan latihan, dapat digunakan dataset MIMIC-III, i
 Query berikut digunakan untuk mengambil data rekam medis, tanggal kunjungan, dan narasi diagnosis dari pasien yang datang pada rentang tanggal **1 Januari 2025 hingga 31 Desember 2025**. Hasil dibatasi sebanyak **50 data** pertama.
 
 ```sql
--- SELECT
---     p.no_rkm_medis AS id_pasien,
---     p.nm_pasien,
---     p.jk,
---     YEAR(CURDATE()) - YEAR(p.tgl_lahir) AS umur_pasien,
---     rp.no_rawat AS id_kunjungan,
---     rp.tgl_registrasi,
---     d.nm_dokter,
---     CONCAT(
---         'Patient: ', p.nm_pasien, ', Age: ', YEAR(CURDATE()) - YEAR(p.tgl_lahir), ' years old. ',
---         'Chief Complaint: ', COALESCE(prw.keluhan, prn.keluhan, 'Not recorded'), '. ',
---         'Physical Examination: ', COALESCE(prw.pemeriksaan, prn.pemeriksaan, 'Not recorded'), '. ',
---         'Assessment: ', COALESCE(prw.penilaian, prn.penilaian, 'Not recorded'), '. ',
---         'Diagnosis: ', GROUP_CONCAT(DISTINCT py.nm_penyakit ORDER BY dp.prioritas SEPARATOR ', '), '.'
---     ) AS rekam_medis_narasi,
---     GROUP_CONCAT(DISTINCT py.nm_penyakit ORDER BY dp.prioritas SEPARATOR ', ') AS diagnosis_structured
--- FROM
---     pasien p
---     INNER JOIN reg_periksa rp ON p.no_rkm_medis = rp.no_rkm_medis
---     INNER JOIN dokter d ON rp.kd_dokter = d.kd_dokter
---     LEFT JOIN pemeriksaan_ralan prw ON rp.no_rawat = prw.no_rawat
---     LEFT JOIN pemeriksaan_ranap prn ON rp.no_rawat = prn.no_rawat
---     LEFT JOIN diagnosa_pasien dp ON rp.no_rawat = dp.no_rawat
---     LEFT JOIN penyakit py ON dp.kd_penyakit = py.kd_penyakit
--- WHERE
---     rp.tgl_registrasi BETWEEN '2025-01-01' AND '2025-12-31'
---     AND rp.stts = 'Sudah'
--- GROUP BY
---     p.no_rkm_medis, rp.no_rawat
--- ORDER BY
---     rp.tgl_registrasi ASC;
+SELECT
+    p.no_rkm_medis AS id_pasien,
+    p.nm_pasien,
+    p.jk,
+    YEAR(CURDATE()) - YEAR(p.tgl_lahir) AS umur_pasien,
+    rp.no_rawat AS id_kunjungan,
+    rp.tgl_registrasi,
+    d.nm_dokter,
+    CONCAT(
+        'Patient: ', p.nm_pasien, ', Age: ', YEAR(CURDATE()) - YEAR(p.tgl_lahir), ' years old. ',
+        'Chief Complaint: ', COALESCE(prw.keluhan, prn.keluhan, 'Not recorded'), '. ',
+        'Physical Examination: ', COALESCE(prw.pemeriksaan, prn.pemeriksaan, 'Not recorded'), '. ',
+        'Assessment: ', COALESCE(prw.penilaian, prn.penilaian, 'Not recorded'), '. ',
+        'Diagnosis: ', GROUP_CONCAT(DISTINCT py.nm_penyakit ORDER BY dp.prioritas SEPARATOR ', '), '.'
+    ) AS rekam_medis_narasi,
+    GROUP_CONCAT(DISTINCT py.nm_penyakit ORDER BY dp.prioritas SEPARATOR ', ') AS diagnosis_structured
+FROM
+    pasien p
+    INNER JOIN reg_periksa rp ON p.no_rkm_medis = rp.no_rkm_medis
+    INNER JOIN dokter d ON rp.kd_dokter = d.kd_dokter
+    LEFT JOIN pemeriksaan_ralan prw ON rp.no_rawat = prw.no_rawat
+    LEFT JOIN pemeriksaan_ranap prn ON rp.no_rawat = prn.no_rawat
+    LEFT JOIN diagnosa_pasien dp ON rp.no_rawat = dp.no_rawat
+    LEFT JOIN penyakit py ON dp.kd_penyakit = py.kd_penyakit
+WHERE
+    rp.tgl_registrasi BETWEEN '2025-01-01' AND '2025-12-31'
+    AND rp.stts = 'Sudah'
+GROUP BY
+    p.no_rkm_medis, rp.no_rawat
+ORDER BY
+    rp.tgl_registrasi ASC;
 
 ```
 
