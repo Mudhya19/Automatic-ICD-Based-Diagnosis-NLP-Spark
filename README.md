@@ -17,6 +17,13 @@ Rumah Sakit Umum Daerah (RSUD) Datu Sanggul melayani ribuan pasien setiap hari. 
 - Data diagnosis tidak mudah dianalisis untuk keperluan manajemen rumah sakit dan pelaporan kepada BPJS.
 - Verifikasi klaim BPJS menjadi lambat akibat data diagnosis tidak terstruktur.
 
+| SMART      | Rumusan untuk kasus “Automated ICD coding pada SIMRS”                                                                                                                                                                       |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Specific   | “Apakah implementasi coding assistant berbasis Spark NLP pada dokumen rekam medis (narasi klinis) dapat meningkatkan akurasi kode ICD dan mempercepat proses coding di unit rekam medis?” jmir+1​                           |
+| Measurable | “Berapa perubahan (i) akurasi/tingkat kesesuaian kode ICD model vs ground truth coder, (ii) median turnaround time coding per berkas, dan (iii) throughput berkas per coder per hari sebelum vs sesudah asisten NLP?” jmir​ |
+| Achievable | “Dengan data historis SIMRS dan infrastruktur Spark yang tersedia, dapatkah dilakukan pilot yang memproses minimal N berkas (mis. 5.000–20.000) untuk menghitung metrik akurasi dan waktu secara objektif?” atlassian​      |
+| Relevant   | “Apakah peningkatan akurasi dan penurunan waktu coding tersebut cukup relevan untuk menurunkan beban kerja coder dan mendukung kualitas proses administrasi/claim (melalui coding yang lebih konsisten)?” jmir+1​           |
+| Time-bound | “Dalam periode pilot selama 8–12 minggu (mis. Q1 2026), apakah sistem mencapai target: penurunan median waktu coding ≥ X% dan peningkatan agreement ICD ≥ Y% dibanding baseline?” samhsa+1​                                 |
 ---
 
 ## 2. Tujuan
