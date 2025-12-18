@@ -386,6 +386,10 @@ setup_project_directories() {
     mkdir -p image
     mkdir -p test
     mkdir -p config
+    mkdir -p app
+    mkdir -p utils
+    mkdir -p .streamlit
+    mkdir -p .vscode
     
     print_success "Project directories created"
     
@@ -396,7 +400,7 @@ setup_project_directories() {
         cat > database/diagnosis_icd_2025.csv << 'EOF'
 id_pasien,nm_pasien,jk,umur_pasien,id_kunjungan,tgl_registrasi,nm_dokter,rekam_medis_narasi,diagnosis_structured
 153284,H. KURSANI Tn,L,71,2025/01/01/0004,2025-01-01,dr. Resti Riyandina Mujiarto,"Patient: H. KURSANI Tn, Age: 71 years old. Chief Complaint: mimisan sejak jam 22.00 td malam, perdarahan aktif (+) sebelah kiri. mual (+) muntah (+) riw HT (+). Physical Examination: Mata: ca (-/-) si (-/-)isokor (+/+) cowong (-/-) Leher: kaku kuduk (-) Thoraks: simetris. Retraksi (-) Pulmo: rhonki - / - / - - / - wheezing - / - - / - - / - Cor s1 s2 reguler. Abd: BU + N. Timpani. Nyeri tekan: - / - / - - / - / - - / - / - CVA (-/-) Defans muskular (-) Hepatomegali (-) Splenomegali (-). Assessment: HT emergency epistaksis posterior. Diagnosis: Essential (primary) hypertension, Epistaxis.","Essential (primary) hypertension, Epistaxis"
-153285,Siti Nurhaliza,P,55,2025/01/02/00005,2025-01-02,dr. Bambang Sutrisno,"Patient: Siti Nurhaliza, Age: 55 years old. Chief Complaint: Shortness of breath for 1 day, cough, dan demam. Physical Examination: SpO2 92%, BP 165/100 mmHg, RR 22/min. Pulmo: Crackles bilateral, ronkhi. Abd: BU normal, tidak ada massa. Cor: S1 S2 reguler. Assessment: Community-acquired pneumonia dengan tanda vital tidak stabil. Diagnosis: Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus.","Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus"
+153285,Siti Nurhaliza,P,55,2025/01/02/0005,2025-01-02,dr. Bambang Sutrisno,"Patient: Siti Nurhaliza, Age: 55 years old. Chief Complaint: Shortness of breath for 1 day, cough, dan demam. Physical Examination: SpO2 92%, BP 165/100 mmHg, RR 22/min. Pulmo: Crackles bilateral, ronkhi. Abd: BU normal, tidak ada massa. Cor: S1 S2 reguler. Assessment: Community-acquired pneumonia dengan tanda vital tidak stabil. Diagnosis: Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus.","Community-acquired pneumonia, Hypertension stage 2, Type 2 diabetes mellitus"
 153286,Budi Santoso,L,45,2025/01/03/0006,2025-01-03,dr. Rina Widyaningsih,"Patient: Budi Santoso, Age: 45 years old. Chief Complaint: Post-operative follow-up from appendectomy. Physical Examination: Luka operasi baik, tidak ada infeksi, tanda vital stabil. Abd: Tidak nyeri, BU normal. Assessment: Status post-appendectomy day 3 dengan pemulihan baik. Diagnosis: Status post-appendectomy, Overweight, Hypertension.","Status post-appendectomy, Overweight, Hypertension"
 EOF
         
@@ -648,13 +652,17 @@ display_summary() {
     
     echo -e "\n${GREEN}Project Structure:${NC}"
     echo "  Database: ./database/"
-    echo "  Output: ./output/"
+    echo " Output: ./output/"
     echo "  Models: ./models/"
     echo "  Source: ./src/"
     echo "  Notebooks: ./notebooks/"
     echo "  Image: ./image/"
     echo "  Test: ./test/"
     echo "  Config: ./config/"
+    echo "  App: ./app/"
+    echo "  Utils: ./utils/"
+    echo "  Streamlit: ./.streamlit/"
+    echo "  VSCode: ./.vscode/"
     
     echo -e "\n${GREEN}Key Packages Installed:${NC}"
     echo " - Apache Spark 3.5.0"
@@ -680,7 +688,7 @@ display_summary() {
     
     echo -e "\n${GREEN}Documentation:${NC}"
     echo "  - See: INSTRUCTION-AUTOMATED-ICD-DIAGNOSIS.md"
-    echo "  - Repository: https://github.com/JohnSnowLabs/spark-nlp"
+    echo " - Repository: https://github.com/JohnSnowLabs/spark-nlp"
     
     echo -e "\n${BLUE}========================================================================${NC}"
     echo -e "${GREEN}✓ Setup completed successfully!${NC}"
