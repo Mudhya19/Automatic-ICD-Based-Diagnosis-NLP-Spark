@@ -42,6 +42,31 @@ print_info() {
     echo -e "${BLUE}ℹ $1${NC}"
 }
 
+# Fungsi untuk mengaktifkan virtual environment
+activate_venv() {
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
+        if [ -f ".venv/Scripts/activate" ]; then
+            source ".venv/Scripts/activate"
+        elif [ -f ".venv\\Scripts\\activate" ]; then
+            source ".venv\\Scripts\\activate"
+        else
+            print_error "Virtual environment activation script not found for Windows"
+            return 1
+        fi
+    else
+        if [ -f ".venv/bin/activate" ]; then
+            source ".venv/bin/activate"
+        elif [ -f ".venv/Scripts/activate" ]; then
+            source ".venv/Scripts/activate"
+        elif [ -f ".venv\\Scripts\\activate" ]; then
+            source ".venv\\Scripts\\activate"
+        else
+            print_error "Virtual environment activation script not found"
+            return 1
+        fi
+    fi
+}
+
 # ============================================================================
 # DETEKSI OS
 # ============================================================================
@@ -231,42 +256,16 @@ setup_virtualenv() {
     
     print_info "Creating virtual environment..."
     if command -v python &> /dev/null; then
-        python -m venv .venv
+        python -m venv ".venv"
     else
-        python3 -m venv .venv
+        python3 -m venv ".venv"
     fi
     
     # Activate virtual environment
-    if [[ "$OS" == "Windows" ]]; then
-        if [ -f ".venv/Scripts/activate" ]; then
-            source .venv/Scripts/activate
-        elif [ -f ".venv\\Scripts\\activate" ]; then
-            source .venv\\Scripts\\activate
-        elif [ -f ".venv/bin/activate" ]; then
-            print_warning "Unix-style virtual environment found on Windows. Recreating for Windows compatibility..."
-            rm -rf .venv
-            if command -v python &> /dev/null; then
-                python -m venv .venv
-            else
-                python3 -m venv .venv
-            fi
-            source .venv/Scripts/activate
-        else
-            print_error "Virtual environment activation script not found for Windows"
-            return 1
-        fi
-    else
-        if [ -f ".venv/bin/activate" ]; then
-            source .venv/bin/activate
-        elif [ -f ".venv/Scripts/activate" ]; then
-            source .venv/Scripts/activate
-        elif [ -f ".venv\\Scripts\\activate" ]; then
-            source .venv\\Scripts\\activate
-        else
-            print_error "Virtual environment activation script not found"
-            return 1
-        fi
-    fi
+    activate_venv || {
+        print_error "Failed to activate virtual environment"
+        return 1
+    }
     
     print_success "Virtual environment created and activated"
     
@@ -289,36 +288,10 @@ install_python_dependencies() {
     print_header "Installing Python Dependencies"
     
     # Activate virtual environment
-    if [[ "$OS" == "Windows" ]]; then
-        if [ -f ".venv/Scripts/activate" ]; then
-            source .venv/Scripts/activate
-        elif [ -f ".venv\\Scripts\\activate" ]; then
-            source .venv\\Scripts\\activate
-        elif [ -f ".venv/bin/activate" ]; then
-            print_warning "Unix-style virtual environment found on Windows. Recreating for Windows compatibility..."
-            rm -rf .venv
-            if command -v python &> /dev/null; then
-                python -m venv .venv
-            else
-                python3 -m venv .venv
-            fi
-            source .venv/Scripts/activate
-        else
-            print_error "Virtual environment activation script not found for Windows"
-            return 1
-        fi
-    else
-        if [ -f ".venv/bin/activate" ]; then
-            source .venv/bin/activate
-        elif [ -f ".venv/Scripts/activate" ]; then
-            source .venv/Scripts/activate
-        elif [ -f ".venv\\Scripts\\activate" ]; then
-            source .venv\\Scripts\\activate
-        else
-            print_error "Virtual environment activation script not found"
-            return 1
-        fi
-    fi
+    activate_venv || {
+        print_error "Failed to activate virtual environment"
+        return 1
+    }
     
     print_info "Installing Python packages..."
     
@@ -341,11 +314,45 @@ install_python_dependencies() {
         if command -v python &> /dev/null; then
             python -m pip install "$package"
         else
-            pip install "$package"
+            python3 -m pip install "$package"
         fi
     done
     
     print_success "All Python dependencies installed"
+}
+
+# ============================================================================
+# INSTALL PYTHON DEPENDENCIES FROM REQUIREMENTS.TXT
+# ============================================================================
+install_python_dependencies_from_file() {
+    print_header "Installing Python Dependencies from requirements.txt"
+    
+    # Activate virtual environment
+    activate_venv || {
+        print_error "Failed to activate virtual environment"
+        return 1
+    }
+    
+    if [ -f "requirements.txt" ]; then
+        print_info "Installing packages from requirements.txt..."
+        
+        # Baca file requirements.txt dan instal satu per satu
+        while IFS= read -r package; do
+            # Lewati baris kosong atau komentar
+            [[ -z "$package" || "$package" =~ ^#.*$ ]] && continue
+            print_info "Installing: $package"
+            if command -v python &> /dev/null; then
+                python -m pip install "$package"
+            else
+                python3 -m pip install "$package"
+            fi
+        done < requirements.txt
+        
+        print_success "All requirements installed from requirements.txt"
+    else
+        print_warning "requirements.txt not found, installing default packages instead"
+        install_python_dependencies
+    fi
 }
 
 # ============================================================================
@@ -390,6 +397,16 @@ setup_project_directories() {
     mkdir -p utils
     mkdir -p .streamlit
     mkdir -p .vscode
+    
+    # Create .gitkeep files to ensure directories are tracked by Git
+    touch .streamlit/.gitkeep
+    touch .vscode/.gitkeep
+    
+    # Create .venv with .gitkeep to ensure directory visibility
+    if [ ! -d ".venv" ]; then
+        python -m venv ".venv"
+        touch .venv/.gitkeep
+    fi
     
     print_success "Project directories created"
     
@@ -478,32 +495,10 @@ verify_installation() {
     print_header "Verifying Installation"
     
     # Activate virtual environment
-    if [[ "$OS" == "Windows" ]]; then
-        if [ -f ".venv/Scripts/activate" ]; then
-            source .venv/Scripts/activate
-        elif [ -f ".venv\\Scripts\\activate" ]; then
-            source .venv\\Scripts\\activate
-        elif [ -f ".venv/bin/activate" ]; then
-            print_warning "Unix-style virtual environment found on Windows. Recreating for Windows compatibility..."
-            rm -rf .venv
-            python3 -m venv .venv
-            source .venv/Scripts/activate
-        else
-            print_error "Virtual environment activation script not found for Windows"
-            return 1
-        fi
-    else
-        if [ -f ".venv/bin/activate" ]; then
-            source .venv/bin/activate
-        elif [ -f ".venv/Scripts/activate" ]; then
-            source .venv/Scripts/activate
-        elif [ -f ".venv\\Scripts\\activate" ]; then
-            source .venv\\Scripts\\activate
-        else
-            print_error "Virtual environment activation script not found"
-            return 1
-        fi
-    fi
+    activate_venv || {
+        print_error "Failed to activate virtual environment"
+        return 1
+    }
     
     # Test Python imports
     print_info "Testing Python imports..."
@@ -590,8 +585,14 @@ PYTHON_TEST
 create_quickstart_script() {
     print_header "Creating Quickstart Script"
     
-    cat > start_jupyter.sh << 'EOF'
+    # Create scripts directory if it doesn't exist
+    mkdir -p scripts
+    
+    cat > scripts/start_jupyter.sh << 'EOF'
 #!/bin/bash
+
+# Change to project directory
+cd "$(dirname "$0")/.."
 
 # Activate virtual environment
 if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
@@ -612,19 +613,22 @@ echo "Starting Jupyter Lab..."
 jupyter lab
 EOF
     
-    chmod +x start_jupyter.sh
+    chmod +x scripts/start_jupyter.sh
     
     print_success "Quickstart script created: scripts/start_jupyter.sh"
     
     # Also create Windows batch script
-    cat > start_jupyter.bat << 'EOF_WINDOWS'
+    cat > scripts/start_jupyter.bat << 'EOF_WINDOWS'
 @echo off
+
+REM Change to project directory
+cd /d "%~dp0\.."
 
 echo Activating virtual environment...
 call .venv\Scripts\activate.bat
 
 echo Starting Jupyter Lab...
-call .venv\Scripts\jupyter-lab.exe
+call jupyter-lab.exe
 EOF_WINDOWS
     
     print_success "Windows quickstart script created: scripts/start_jupyter.bat"
@@ -640,12 +644,12 @@ display_summary() {
     echo -e "\n${GREEN}System Information:${NC}"
     echo " OS: $OS ($DISTRO)"
     if command -v python &> /dev/null; then
-        echo "  Python: $(python --version)"
+        echo " Python: $(python --version)"
     else
         echo "  Python: $(python3 --version)"
     fi
     if command -v pip &> /dev/null; then
-        echo "  Pip: $(pip --version)"
+        echo " Pip: $(pip --version)"
     else
         echo "  Pip: $(pip3 --version)"
     fi
@@ -654,15 +658,15 @@ display_summary() {
     echo "  Database: ./database/"
     echo " Output: ./output/"
     echo "  Models: ./models/"
-    echo "  Source: ./src/"
-    echo "  Notebooks: ./notebooks/"
+    echo " Source: ./src/"
+    echo " Notebooks: ./notebooks/"
     echo "  Image: ./image/"
-    echo "  Test: ./test/"
-    echo "  Config: ./config/"
+    echo " Test: ./test/"
+    echo " Config: ./config/"
     echo "  App: ./app/"
     echo "  Utils: ./utils/"
     echo "  Streamlit: ./.streamlit/"
-    echo "  VSCode: ./.vscode/"
+    echo " VSCode: ./.vscode/"
     
     echo -e "\n${GREEN}Key Packages Installed:${NC}"
     echo " - Apache Spark 3.5.0"
@@ -681,17 +685,23 @@ display_summary() {
     fi
     
     echo " 3. Start Jupyter Lab:"
-    echo "     bash start_jupyter.sh  # Linux/Mac"
-    echo "     .venv\\Scripts\\activate && jupyter lab     # Windows"
+    echo "     bash scripts/start_jupyter.sh  # Linux/Mac"
+    echo "     scripts\\start_jupyter.bat     # Windows"
     echo " 4. Open automated_icd_diagnosis.ipynb notebook"
     echo "  5. Run cells sequentially to process medical records"
     
     echo -e "\n${GREEN}Documentation:${NC}"
-    echo "  - See: INSTRUCTION-AUTOMATED-ICD-DIAGNOSIS.md"
+    echo " - See: INSTRUCTION-AUTOMATED-ICD-DIAGNOSIS.md"
     echo " - Repository: https://github.com/JohnSnowLabs/spark-nlp"
     
     echo -e "\n${BLUE}========================================================================${NC}"
     echo -e "${GREEN}✓ Setup completed successfully!${NC}"
+    echo -e "${BLUE}========================================================================${NC}"
+    echo -e "${GREEN}Catatan Khusus:${NC}"
+    echo -e "${YELLOW}  - Gunakan Git Bash untuk menjalankan skrip ini${NC}"
+    echo -e "${YELLOW}  - Skrip ini dirancang untuk digunakan secara fokus pada proyek ini${NC}"
+    echo -e "${YELLOW} - Semua dependensi diinstal di dalam virtual environment${NC}"
+    echo -e "${YELLOW}  - Tidak akan mengganggu konfigurasi sistem lain${NC}"
     echo -e "${BLUE}========================================================================${NC}\n"
 }
 
@@ -736,7 +746,7 @@ main() {
     
     install_system_dependencies
     setup_virtualenv
-    install_python_dependencies
+    install_python_dependencies_from_file
     clone_sparknlp_repo
     setup_project_directories
     setup_environment_variables

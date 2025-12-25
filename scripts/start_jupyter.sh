@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Change to project directory
+cd "$(dirname "$0")/.."
+
 # Activate virtual environment
 if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
     if [ -f ".venv/Scripts/activate" ]; then

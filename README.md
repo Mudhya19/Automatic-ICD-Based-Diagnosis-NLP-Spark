@@ -238,6 +238,8 @@ Automatic-ICD-Based-Diagnosis-NLP-Spark/
 ├── INSTRUCTION-AUTOMATED-ICD-DIAGNOSIS.md  # Dokumentasi teknis
 ├── .env                            # Environment variables
 ├── .gitignore                      # Files to ignore in Git
+├── .venv/                          # Virtual environment (dengan .gitkeep untuk ditampilkan)
+│   └── README.md                   # Informasi tentang virtual environment
 ├── database/
 │   └── diagnosis_icd_2025.csv      # Data CSV hasil query SIMRS
 ├── output/
@@ -282,5 +284,98 @@ Proyek ini menghasilkan:
 - Mapping diagnosis ke kode ICD-10
 - Statistik akurasi ekstraksi
 - File output dalam format CSV dan JSON
+
+---
+
+## 12. Pengaturan Lingkungan Virtual (.venv)
+
+Proyek ini menggunakan virtual environment untuk mengelola dependensi Python. Ikuti langkah-langkah berikut untuk mengatur lingkungan:
+
+### Persyaratan Awal
+
+- Python 3.8 atau lebih tinggi
+- Git
+- Java JDK 11+ (untuk Apache Spark)
+
+### Setup Virtual Environment
+
+#### Metode Otomatis (Disarankan)
+
+Jalankan skrip setup otomatis:
+
+```bash
+# Untuk Linux/Mac
+./setup.sh
+
+# Untuk Windows (gunakan Git Bash atau Command Prompt)
+setup.sh
+```
+
+#### Metode Manual
+
+1. Buat virtual environment:
+
+   ```bash
+   python -m venv ".venv"
+   ```
+
+2. Aktifkan virtual environment:
+
+   - Linux/Mac:
+     ```bash
+     source .venv/bin/activate
+     ```
+   - Windows:
+     ```cmd
+     .venv\Scripts\activate
+     ```
+
+3. Instal dependensi:
+   ```bash
+   pip install --upgrade pip setuptools wheel
+   pip install -r requirements.txt
+   ```
+
+#### Metode Alternatif (Menggunakan Skrip Terpisah)
+
+Fungsionalitas instalasi dependensi sekarang sudah diintegrasikan ke dalam setup.sh. Untuk Windows, Anda masih dapat menggunakan skrip terpisah:
+
+Fungsionalitas untuk Windows juga telah diintegrasikan ke dalam setup.sh. Anda dapat menjalankan setup.sh di Git Bash di Windows.
+
+### Struktur Virtual Environment
+
+Virtual environment disimpan di folder `.venv` di root proyek. Meskipun sebagian besar konten virtual environment diabaikan oleh Git, folder ini tetap ditampilkan di struktur proyek karena keberadaan file .gitkeep dan README.md untuk dokumentasi.
+
+### Konfigurasi Tambahan
+
+File `config/venv_config.py` menyediakan informasi dan utilitas untuk mengelola virtual environment.
+
+### Menampilkan Folder .venv di VSCode
+
+Jika folder `.venv` tidak terlihat di Explorer VSCode, Anda dapat mengikuti langkah-langkah berikut untuk menampilkannya:
+
+1. Buka VSCode
+2. Buka Settings (File > Preferences > Settings atau tekan `Ctrl+,`)
+3. Cari "files.exclude"
+4. Pastikan entri berikut ada dan bernilai false:
+   - `**/.venv`: false
+   - `**/venv`: false
+   - `**/env`: false
+   - `**/.env`: false
+
+Atau, Anda bisa menambahkan konfigurasi berikut ke file `.vscode/settings.json` di proyek Anda:
+
+```json
+{
+  "files.exclude": {
+    "**/.venv": false,
+    "**/venv": false,
+    "**/env": false,
+    "**/.env": false
+  }
+}
+```
+
+Konfigurasi ini sudah disertakan dalam setup otomatis di file `.vscode/settings.json` yang dibuat oleh skrip setup.sh, sehingga virtual environment akan terlihat di VSCode setelah menjalankan skrip tersebut.
 
 ---

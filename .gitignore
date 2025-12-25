@@ -1,8 +1,11 @@
 # Virtual environments
-.venv/
+.venv/*
+!.venv/.gitkeep
+!.venv/README.md
 venv/
 env/
 ENV/
+.venv_temp/
 
 # Python
 __pycache__/
