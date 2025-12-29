@@ -17,22 +17,22 @@ Original file is located at
 
 ## OUTLINE NOTEBOOK
 
-1. **Poin 1-2**: Domain + S.M.A.R.T Questions (Rekapitulasi)
-2. **Poin 3**: Data Loading & Validation (kedua dataset)
-3. **Poin 4a**: NLP Pipeline (Spark NLP NER - Rekap dari project sebelumnya)
-4. **Poin 4b**: Feature Engineering untuk ML
-5. **Poin 4c**: Model 1 - Logistic Regression (Prediksi Valid ICD-10 Map)
-6. **Poin 4d**: Model 2 - Linear Regression (Trend Beban Kerja Coding)
-7. **Poin 4e**: Model 3 - Random Forest (Prediksi Kategori Diagnosis)
-8. **Poin 4f**: Model Comparison & Best Model Selection
-9. **Poin 5**: Dashboard Visualization & Insights
-10. **Poin 6**: Business Recommendations & Export
+1. Domain + S.M.A.R.T Questions (Rekapitulasi)
+2. Data Loading & Validation (kedua dataset)
+3. NLP Pipeline (Spark NLP NER - Rekap dari project sebelumnya)
+4. Feature Engineering untuk ML
+5. Model 1 - Logistic Regression (Prediksi Valid ICD-10 Map)
+6. Model 2 - Linear Regression (Trend Beban Kerja Coding)
+7. Model 3 - Random Forest (Prediksi Kategori Diagnosis)
+8. Model Comparison & Best Model Selection
+9. Dashboard Visualization & Insights
+10. Business Recommendations & Export
 
 ---
 
-# POIN 1-2: DOMAIN & S.M.A.R.T QUESTIONS (REKAPITULASI)
+# 1. DOMAIN & S.M.A.R.T QUESTIONS (REKAPITULASI)
 
-## Poin 1: Domain yang Dipilih
+## 1.1 Domain yang Dipilih
 
 **Domain**: Sistem Informasi Manajemen Rumah Sakit (SIMRS) - Unit Rekam Medis  
 **Fokus**: Automated ICD-10 Clinical Coding menggunakan Natural Language Processing  
@@ -45,7 +45,7 @@ Original file is located at
 - **Delay Pelaporan**: Dinas Kesehatan terlambat 2-4 minggu
 - **Dampak Organisasi**: Beban kerja tim coding overload, akurasi diagnosis rendah, ROI BPJS hilang
 
-## Poin 2: S.M.A.R.T Questions untuk Keputusan Organisasi
+## 1.2 S.M.A.R.T Questions untuk Keputusan Organisasi
 
 | Dimensi | Rumusan | Target |
 |---------|---------|--------|
@@ -62,9 +62,9 @@ Original file is located at
 4. **Forecast**: Bagaimana trend beban kerja 6 bulan ke depan?
 5. **ROI**: Penghematan cost vs investasi Spark NLP infrastructure?
 
-# POIN 3: DATA LOADING & VALIDATION
+# 2. DATA LOADING & VALIDATION
 
-## Setup: Install Dependencies (jalankan 1x)
+## 2.1 Setup: Install Dependencies (jalankan 1x)
 """
 
 # Commented out IPython magic to ensure Python compatibility.
@@ -74,7 +74,7 @@ Original file is located at
 # %pip install -q pandas numpy scikit-learn matplotlib seaborn
 print("✓ Dependencies installed successfully!")
 
-"""## Import Libraries & Initialize Spark"""
+"""## 2.2 Import Libraries & Initialize Spark"""
 
 # Core Libraries
 import sparknlp
@@ -112,7 +112,7 @@ print(f"✓ Spark NLP version: {sparknlp.version()}")
 print(f"✓ Spark version: {spark.version}")
 print(f"✓ Spark App: {spark.sparkContext.appName}")
 
-"""## Poin 3: Load Kedua Dataset"""
+"""## 2.3 Load Kedua Dataset"""
 
 # ======================================================================
 # DATASET 1: REKAM MEDIS PASIEN (SIMRS LOKAL)
@@ -220,9 +220,9 @@ df_icd_catalog.groupBy("VERSION").count().show()
 
 print(f"\n✓ Data validation completed successfully!")
 
-"""# POIN 4a: NLP PIPELINE (SPARK NLP RECAP + ENHANCEMENT)
+"""# 4. NLP PIPELINE (SPARK NLP RECAP + ENHANCEMENT)
 
-## NLP Preprocessing & Ground Truth Preparation
+## 4.1 NLP Preprocessing & Ground Truth Preparation
 """
 
 print(f"\n{'='*70}")
@@ -367,7 +367,7 @@ print(f"Accuracy: {accuracy:.2f}%")
 print(f"\nMatching Breakdown:")
 df_validated.groupBy("match_with_gt").count().show()
 
-"""# POIN 4b: FEATURE ENGINEERING UNTUK ML MODELS"""
+"""# 5. FEATURE ENGINEERING UNTUK ML MODELS"""
 
 print(f"\n{'='*70}")
 print("POIN 4b: FEATURE ENGINEERING")
@@ -446,7 +446,7 @@ df_ml.select(
     "id_pasien", "narrative_length", "num_diagnosis", "age_group", "entity_count", "is_valid_mapping"
 ).limit(5).show()
 
-"""# POIN 4c: MODEL 1 - LOGISTIC REGRESSION (Prediksi Valid ICD-10 Map)"""
+"""# 6. MODEL 1 - LOGISTIC REGRESSION (Prediksi Valid ICD-10 Map)"""
 
 print(f"\n{'='*70}")
 print("POIN 4c: MODEL 1 - LOGISTIC REGRESSION")
@@ -573,7 +573,7 @@ model1_results = {
 
 print(f"\n✓ Model 1 evaluation completed")
 
-"""# POIN 4d: MODEL 2 - LINEAR REGRESSION (Trend Beban Kerja Coding)"""
+"""# 7. MODEL 2 - LINEAR REGRESSION (Trend Beban Kerja Coding)"""
 
 print(f"\n{'='*70}")
 print("POIN 4d: MODEL 2 - LINEAR REGRESSION")
@@ -734,15 +734,16 @@ model2_results = {
 
 print(f"\n✓ Model 2 evaluation completed")
 
-"""# POIN 4e: MODEL 3 - RANDOM FOREST (Prediksi Kategori Diagnosis)"""
+"""# 8. MODEL 3 - RANDOM FOREST (Prediksi Kategori Diagnosis)"""
 
 print(f"\n{'='*70}")
 print("POIN 4e: MODEL 3 - RANDOM FOREST CLASSIFIER")
-print("Tujuan: Prediksi kategori diagnosis utama (17 poliklinik)")
+print("Tujuan: Prediksi kategori diagnosis utama (16 poliklinik)")
 print(f"{'='*70}")
 
 # Create diagnosis categories mapping
 diagnosis_category_map = {
+    # Existing categories
     "GERIATRI": "GERIATRI",
     "hypertension": "GERIATRI",
     "diabetes": "GERIATRI",
@@ -756,6 +757,72 @@ diagnosis_category_map = {
     "trauma": "IGD",
     "epilepsy": "SARAF",
     "depression": "JIWA",
+
+    # New polyclinics based on user request
+    "THT-KL": "THT-KL",
+    "telinga": "THT-KL",
+    "hidung": "THT-KL",
+    "tenggorokan": "THT-KL",
+
+    "SARAF": "SARAF",
+    "neurologi": "SARAF",
+    "saraf": "SARAF",
+
+    "PARU": "PARU",
+    "pulmonologi": "PARU",
+    "paru": "PARU",
+
+    "OBYGN": "OBYGN",
+    "kebidanan": "OBYGN",
+    "kandungan": "OBYGN",
+    "ginekologi": "OBYGN",
+
+    "MATA": "MATA",
+    "oftalmologi": "MATA",
+    "mata": "MATA",
+
+    "Kulit & Kelamin": "KULIT_KELAMIN",
+    "dermatologi": "KULIT_KELAMIN",
+    "kulit": "KULIT_KELAMIN",
+    "kelamin": "KULIT_KELAMIN",
+
+    "Jiwa": "JIWA",
+    "psikiatri": "JIWA",
+    "mental": "JIWA",
+
+    "Jantung & Pembuluh Darah": "KARDIO",
+    "kardiologi": "KARDIO",
+    "jantung": "KARDIO",
+    "pembuluh darah": "KARDIO",
+
+    "Rehabilitas Medik": "REHABILITASI",
+    "fisioterapi": "REHABILITASI",
+    "rehabilitasi": "REHABILITASI",
+
+    "Penyakit Dalam": "DALAM",
+    "interna": "DALAM",
+    "penyakit dalam": "DALAM",
+
+    "Instalasi Gawat Darurat": "IGD",
+    "gawat darurat": "IGD",
+    "emergency": "IGD",
+
+    "Hemadolisa": "HEMODIALISA",
+    "hemodialisa": "HEMODIALISA",
+    "cuci darah": "HEMODIALISA",
+
+    "Gigi Endonsi": "GIGI_ENDONSI",
+    "gigi": "GIGI_ENDONSI",
+    "endodonsi": "GIGI_ENDONSI",
+
+    "Bedah Umum": "BEDAH_UMUM",
+    "operasi": "BEDAH_UMUM",
+    "bedah": "BEDAH_UMUM",
+
+    "Tumbuh Kembang Anak": "ANAK",
+    "pediatri": "ANAK",
+    "anak": "ANAK",
+    "tumbuh kembang": "ANAK"
 }
 
 def categorize_diagnosis(diagnosis_text):
@@ -897,7 +964,7 @@ model3_results = {
 
 print(f"\n✓ Model 3 evaluation completed")
 
-"""# POIN 4f: MODEL COMPARISON & BEST MODEL SELECTION"""
+"""# 9. MODEL COMPARISON & BEST MODEL SELECTION"""
 
 print(f"\n{'='*70}")
 print("MODEL COMPARISON & BEST MODEL SELECTION")
@@ -981,7 +1048,7 @@ Combine ketiga model dalam SIMRS:
   → Output: Integrated coding decision support + workload forecast
 """)
 
-"""# POIN 5: DASHBOARD VISUALIZATION & INSIGHTS"""
+"""# 10. DASHBOARD VISUALIZATION & INSIGHTS"""
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -1104,7 +1171,7 @@ plt.show()
 
 print(f"\n✓ Dashboard visualization saved as 'model_analysis_dashboard.png'")
 
-"""# POIN 6: BUSINESS RECOMMENDATIONS & EXPORT"""
+"""# 11. BUSINESS RECOMMENDATIONS & EXPORT"""
 
 print(f"\n{'='*70}")
 print("POIN 6: BUSINESS RECOMMENDATIONS & STRATEGIC INSIGHTS")
@@ -1344,9 +1411,9 @@ print(f"✓ Sample predictions exported: predictions_sample_{timestamp}.csv")
 # 3. Create Final Report
 final_report = f"""
 ╔══════════════════════════════════════════════════════════════════════╗
-║                   BIG DATA ANALYTICS FINAL REPORT                     ║
-║            AUTOMATED ICD-10 DIAGNOSIS CODING FOR SIMRS                 ║
-║                 RSUD Datu Sanggul, Kalimantan Selatan                  ║
+║                   BIG DATA ANALYTICS FINAL REPORT                    ║
+║            AUTOMATED ICD-10 DIAGNOSIS CODING FOR SIMRS               ║
+║                 RSUD Datu Sanggul, Kalimantan Selatan                ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
