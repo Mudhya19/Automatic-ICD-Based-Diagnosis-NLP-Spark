@@ -278,19 +278,254 @@ print(f"{'='*70}")
 
 # Create clinical keywords dictionary untuk diagnosis extraction
 clinical_keywords = {
-    "Hypertension": ["hypertension", "tekanan darah tinggi", "hipertensi", "HT", "i10"],
-    "Diabetes": ["diabetes", "DM", "gula darah tinggi", "gula"],
-    "Pneumonia": ["pneumonia", "pneum", "paru-paru"],
-    "COPD": ["COPD", "copd", "chronic obstructive"],
-    "Stroke": ["stroke", "CVA", "cerebral"],
-    "Heart Disease": ["heart", "jantung", "cardiac", "angina", "AMI"],
-    "Kidney Disease": ["kidney", "ginjal", "renal", "CKD"],
-    "Infection": ["infection", "infeksi", "UTI"],
-    "Trauma": ["trauma", "fracture", "patah", "luka"],
-    "Epilepsy": ["epilepsy", "seizure", "kejang"],
-    "Depression": ["depression", "depresi", "mood"],
-    "Asthma": ["asthma", "asma", "sesak"],
+
+    # 1. INSTALASI GAWAT DARURAT (IGD)
+    "Acute Myocardial Infarction": [
+        "acute myocardial infarction", "ami", "serangan jantung", "i21"
+    ],
+    "Ischemic Stroke": [
+        "stroke", "ischemic stroke", "cva", "i63"
+    ],
+    "Hemorrhagic Stroke": [
+        "hemorrhagic stroke", "perdarahan otak", "i61"
+    ],
+    "Acute Respiratory Failure": [
+        "acute respiratory failure", "arf", "gagal napas akut", "j96"
+    ],
+    "Syncope": [
+        "syncope", "pingsan", "r55"
+    ],
+    "Trauma": [
+        "trauma", "cedera", "luka", "t14"
+    ],
+
+    # 2. HEMODIALISIS
+    "End Stage Renal Disease": [
+        "end stage renal disease", "esrd", "gagal ginjal terminal", "n18.6"
+    ],
+    "Chronic Kidney Disease": [
+        "chronic kidney disease", "ckd", "n18"
+    ],
+    "Acute Kidney Injury": [
+        "acute kidney injury", "aki", "n17"
+    ],
+    "Hemodialysis Status": [
+        "hemodialysis", "dialysis", "cuci darah", "z99.2"
+    ],
+    "Uremia": [
+        "uremia", "uremik", "n19"
+    ],
+
+    # 3. GERIATRI
+    "Hypertension": [
+        "hypertension", "hipertensi", "ht", "i10"
+    ],
+    "Diabetes Mellitus Type 2": [
+        "diabetes mellitus", "dm", "dm tipe 2", "e11"
+    ],
+    "Dementia": [
+        "dementia", "demensia", "f03"
+    ],
+    "Alzheimer Disease": [
+        "alzheimer", "alzheimer disease", "g30"
+    ],
+    "Frailty Syndrome": [
+        "frailty", "senility", "r54"
+    ],
+    "Osteoporosis": [
+        "osteoporosis", "tulang keropos", "m81"
+    ],
+
+    # 4. FISIOTERAPI
+    "Low Back Pain": [
+        "low back pain", "lumbago", "nyeri pinggang", "m54.5"
+    ],
+    "Cervicalgia": [
+        "cervicalgia", "neck pain", "nyeri leher", "m54.2"
+    ],
+    "Hemiplegia": [
+        "hemiplegia", "kelumpuhan satu sisi", "g81"
+    ],
+    "Stroke Rehabilitation": [
+        "stroke rehabilitation", "rehabilitasi stroke", "z50"
+    ],
+
+    # 5. PENYAKIT DALAM
+    "Dyslipidemia": [
+        "dyslipidemia", "hyperlipidemia", "e78"
+    ],
+    "Hypothyroidism": [
+        "hypothyroidism", "hipotiroid", "e03"
+    ],
+    "Gastroesophageal Reflux Disease": [
+        "gerd", "gastroesophageal reflux", "k21"
+    ],
+    "Fatty Liver": [
+        "fatty liver", "nafld", "k76.0"
+    ],
+
+    # 6. BEDAH
+    "Acute Appendicitis": [
+        "appendicitis", "radang usus buntu", "k35"
+    ],
+    "Inguinal Hernia": [
+        "inguinal hernia", "hernia inguinalis", "k40"
+    ],
+    "Cholelithiasis": [
+        "cholelithiasis", "gallstones", "batu empedu", "k80"
+    ],
+    "Femur Fracture": [
+        "femur fracture", "fraktur femur", "s72"
+    ],
+
+    # 7. THT
+    "Acute Pharyngitis": [
+        "acute pharyngitis", "radang tenggorok", "j02"
+    ],
+    "Acute Tonsillitis": [
+        "tonsillitis", "radang amandel", "j03"
+    ],
+    "Chronic Sinusitis": [
+        "sinusitis", "chronic sinusitis", "j32"
+    ],
+    "Otitis Media": [
+        "otitis media", "infeksi telinga tengah", "h66"
+    ],
+
+    # 8. OBSTETRI / GYN
+    "Normal Delivery": [
+        "normal delivery", "persalinan normal", "o80"
+    ],
+    "Pre-eclampsia": [
+        "pre-eclampsia", "preeklamsia", "o14"
+    ],
+    "Gestational Diabetes": [
+        "gestational diabetes", "gdm", "o24.4"
+    ],
+    "Placenta Previa": [
+        "placenta previa", "o44"
+    ],
+
+    # 9. MATA
+    "Cataract": [
+        "cataract", "katarak", "h25"
+    ],
+    "Glaucoma": [
+        "glaucoma", "h40"
+    ],
+    "Conjunctivitis": [
+        "conjunctivitis", "radang mata", "h10"
+    ],
+    "Presbyopia": [
+        "presbyopia", "mata tua", "h52.4"
+    ],
+
+    # 10. JIWA
+    "Depressive Disorder": [
+        "depression", "depresi", "f32"
+    ],
+    "Anxiety Disorder": [
+        "anxiety disorder", "gangguan cemas", "f41"
+    ],
+    "Schizophrenia": [
+        "schizophrenia", "skizofrenia", "f20"
+    ],
+    "Bipolar Disorder": [
+        "bipolar disorder", "gangguan bipolar", "f31"
+    ],
+    "Insomnia": [
+        "insomnia", "gangguan tidur", "g47"
+    ],
+
+    # 11. JANTUNG
+    "Angina Pectoris": [
+        "angina", "angina pectoris", "i20"
+    ],
+    "Chronic Ischemic Heart Disease": [
+        "coronary artery disease", "cad", "i25"
+    ],
+    "Heart Failure": [
+        "heart failure", "gagal jantung", "i50"
+    ],
+
+    # 12. PARU
+    "Pneumonia": [
+        "pneumonia", "radang paru", "j18"
+    ],
+    "Acute Bronchitis": [
+        "acute bronchitis", "bronkitis akut", "j20"
+    ],
+    "Pulmonary Tuberculosis": [
+        "tuberculosis", "tb paru", "a15"
+    ],
+    "Pleural Effusion": [
+        "pleural effusion", "efusi pleura", "j90"
+    ],
+
+    # 13. ANAK
+    "Upper Respiratory Infection": [
+        "uri", "ispa", "j06"
+    ],
+    "Febrile Seizure": [
+        "febrile seizure", "kejang demam", "r56"
+    ],
+    "Iron Deficiency Anemia": [
+        "iron deficiency anemia", "anemia defisiensi besi", "d50"
+    ],
+
+    # 14. KULIT & KELAMIN
+    "Atopic Dermatitis": [
+        "atopic dermatitis", "eksim", "l20"
+    ],
+    "Psoriasis": [
+        "psoriasis", "l40"
+    ],
+    "Acne Vulgaris": [
+        "acne vulgaris", "jerawat", "l70"
+    ],
+    "Tinea Corporis": [
+        "tinea corporis", "kurap", "b35.4"
+    ],
+    "Genital Warts": [
+        "genital warts", "kutil kelamin", "a63"
+    ],
+
+    # 15. TUMBUH KEMBANG PED. SOSIAL
+    "Developmental Delay": [
+        "developmental delay", "keterlambatan perkembangan", "r62"
+    ],
+    "Autism Spectrum Disorder": [
+        "autism", "asd", "f84"
+    ],
+    "ADHD": [
+        "adhd", "attention deficit hyperactivity disorder", "f90"
+    ],
+    "Speech Delay": [
+        "speech delay", "keterlambatan bicara", "f80"
+    ],
+    "Learning Disability": [
+        "learning disability", "kesulitan belajar", "f81"
+    ],
+
+    # 16. SARAF
+    "Epilepsy": [
+        "epilepsy", "epilepsi", "g40"
+    ],
+    "Parkinson Disease": [
+        "parkinson disease", "parkinson", "g20"
+    ],
+    "Peripheral Neuropathy": [
+        "peripheral neuropathy", "neuropati perifer", "g62"
+    ],
+    "Diabetic Neuropathy": [
+        "diabetic neuropathy", "neuropati diabetik", "e11.4"
+    ],
+    "Migraine": [
+        "migraine", "sakit kepala sebelah", "g43"
+    ]
 }
+
+
 
 # Function to extract entities from narrative
 def extract_entities_from_text(text):
@@ -741,89 +976,155 @@ print("POIN 4e: MODEL 3 - RANDOM FOREST CLASSIFIER")
 print("Tujuan: Prediksi kategori diagnosis utama (16 poliklinik)")
 print(f"{'='*70}")
 
-# Create diagnosis categories mapping
 diagnosis_category_map = {
-    # Existing categories
-    "GERIATRI": "GERIATRI",
-    "hypertension": "GERIATRI",
-    "diabetes": "GERIATRI",
-    "asthma": "PARU",
-    "pneumonia": "PARU",
-    "COPD": "PARU",
-    "heart": "KARDIO",
-    "stroke": "SARAF",
-    "kidney": "DALAM",
-    "infection": "IGD",
+
+    # 1. INSTALASI GAWAT DARURAT (IGD)
+    "acute myocardial infarction": "IGD",
+    "ami": "IGD",
+    "stroke": "IGD",
+    "ischemic stroke": "IGD",
+    "hemorrhagic stroke": "IGD",
+    "acute respiratory failure": "IGD",
+    "syncope": "IGD",
     "trauma": "IGD",
-    "epilepsy": "SARAF",
-    "depression": "JIWA",
+    "emergency": "IGD",
+    "gawat darurat": "IGD",
 
-    # New polyclinics based on user request
-    "THT-KL": "THT-KL",
-    "telinga": "THT-KL",
-    "hidung": "THT-KL",
-    "tenggorokan": "THT-KL",
+    # 2. HEMODIALISIS
+    "hemodialysis": "HEMODIALISIS",
+    "hemodialisa": "HEMODIALISIS",
+    "dialysis": "HEMODIALISIS",
+    "cuci darah": "HEMODIALISIS",
+    "end stage renal disease": "HEMODIALISIS",
+    "esrd": "HEMODIALISIS",
+    "ckd stage 5": "HEMODIALISIS",
 
-    "SARAF": "SARAF",
-    "neurologi": "SARAF",
-    "saraf": "SARAF",
+    # 3. GERIATRI
+    "geriatric": "GERIATRI",
+    "hypertension": "GERIATRI",
+    "hipertensi": "GERIATRI",
+    "diabetes mellitus": "GERIATRI",
+    "dm": "GERIATRI",
+    "dementia": "GERIATRI",
+    "alzheimer": "GERIATRI",
+    "frailty": "GERIATRI",
+    "osteoporosis": "GERIATRI",
 
-    "PARU": "PARU",
-    "pulmonologi": "PARU",
-    "paru": "PARU",
+    # 4. FISIOTERAPI
+    "fisioterapi": "FISIOTERAPI",
+    "rehabilitasi": "FISIOTERAPI",
+    "low back pain": "FISIOTERAPI",
+    "lumbago": "FISIOTERAPI",
+    "hemiplegia": "FISIOTERAPI",
+    "stroke rehabilitation": "FISIOTERAPI",
 
-    "OBYGN": "OBYGN",
-    "kebidanan": "OBYGN",
-    "kandungan": "OBYGN",
-    "ginekologi": "OBYGN",
+    # 5. PENYAKIT DALAM
+    "penyakit dalam": "PENYAKIT_DALAM",
+    "internal medicine": "PENYAKIT_DALAM",
+    "dyslipidemia": "PENYAKIT_DALAM",
+    "hyperlipidemia": "PENYAKIT_DALAM",
+    "hypothyroidism": "PENYAKIT_DALAM",
+    "gerd": "PENYAKIT_DALAM",
+    "fatty liver": "PENYAKIT_DALAM",
 
-    "MATA": "MATA",
-    "oftalmologi": "MATA",
+    # 6. BEDAH
+    "appendicitis": "BEDAH",
+    "hernia": "BEDAH",
+    "cholelithiasis": "BEDAH",
+    "gallstones": "BEDAH",
+    "fracture": "BEDAH",
+    "operasi": "BEDAH",
+    "bedah": "BEDAH",
+
+    # 7. THT
+    "tonsillitis": "THT",
+    "pharyngitis": "THT",
+    "sinusitis": "THT",
+    "otitis": "THT",
+    "telinga": "THT",
+    "hidung": "THT",
+    "tenggorokan": "THT",
+
+    # 8. OBSTETRI / GYN
+    "obgyn": "OBGYN",
+    "kebidanan": "OBGYN",
+    "kandungan": "OBGYN",
+    "normal delivery": "OBGYN",
+    "pre-eclampsia": "OBGYN",
+    "gestational diabetes": "OBGYN",
+    "placenta previa": "OBGYN",
+
+    # 9. MATA
+    "cataract": "MATA",
+    "katarak": "MATA",
+    "glaucoma": "MATA",
+    "conjunctivitis": "MATA",
     "mata": "MATA",
 
-    "Kulit & Kelamin": "KULIT_KELAMIN",
-    "dermatologi": "KULIT_KELAMIN",
-    "kulit": "KULIT_KELAMIN",
-    "kelamin": "KULIT_KELAMIN",
-
-    "Jiwa": "JIWA",
-    "psikiatri": "JIWA",
+    # 10. JIWA
+    "depression": "JIWA",
+    "depresi": "JIWA",
+    "anxiety": "JIWA",
+    "schizophrenia": "JIWA",
+    "bipolar": "JIWA",
+    "insomnia": "JIWA",
     "mental": "JIWA",
+    "psikiatri": "JIWA",
 
-    "Jantung & Pembuluh Darah": "KARDIO",
-    "kardiologi": "KARDIO",
-    "jantung": "KARDIO",
-    "pembuluh darah": "KARDIO",
+    # 11. JANTUNG
+    "heart failure": "JANTUNG",
+    "gagal jantung": "JANTUNG",
+    "angina": "JANTUNG",
+    "coronary artery disease": "JANTUNG",
+    "cad": "JANTUNG",
+    "jantung": "JANTUNG",
+    "kardiologi": "JANTUNG",
 
-    "Rehabilitas Medik": "REHABILITASI",
-    "fisioterapi": "REHABILITASI",
-    "rehabilitasi": "REHABILITASI",
+    # 12. PARU
+    "pneumonia": "PARU",
+    "bronchitis": "PARU",
+    "tuberculosis": "PARU",
+    "tb paru": "PARU",
+    "copd": "PARU",
+    "asthma": "PARU",
+    "paru": "PARU",
 
-    "Penyakit Dalam": "DALAM",
-    "interna": "DALAM",
-    "penyakit dalam": "DALAM",
-
-    "Instalasi Gawat Darurat": "IGD",
-    "gawat darurat": "IGD",
-    "emergency": "IGD",
-
-    "Hemadolisa": "HEMODIALISA",
-    "hemodialisa": "HEMODIALISA",
-    "cuci darah": "HEMODIALISA",
-
-    "Gigi Endonsi": "GIGI_ENDONSI",
-    "gigi": "GIGI_ENDONSI",
-    "endodonsi": "GIGI_ENDONSI",
-
-    "Bedah Umum": "BEDAH_UMUM",
-    "operasi": "BEDAH_UMUM",
-    "bedah": "BEDAH_UMUM",
-
-    "Tumbuh Kembang Anak": "ANAK",
+    # 13. ANAK
     "pediatri": "ANAK",
     "anak": "ANAK",
-    "tumbuh kembang": "ANAK"
+    "ispa": "ANAK",
+    "uri": "ANAK",
+    "febrile seizure": "ANAK",
+    "kejang demam": "ANAK",
+
+    # 14. KULIT & KELAMIN
+    "dermatitis": "KULIT_KELAMIN",
+    "eczema": "KULIT_KELAMIN",
+    "psoriasis": "KULIT_KELAMIN",
+    "acne": "KULIT_KELAMIN",
+    "jerawat": "KULIT_KELAMIN",
+    "tinea": "KULIT_KELAMIN",
+    "genital warts": "KULIT_KELAMIN",
+
+    # 15. TUMBUH KEMBANG PED. SOSIAL
+    "developmental delay": "TUMBUH_KEMBANG",
+    "autism": "TUMBUH_KEMBANG",
+    "asd": "TUMBUH_KEMBANG",
+    "adhd": "TUMBUH_KEMBANG",
+    "speech delay": "TUMBUH_KEMBANG",
+    "learning disability": "TUMBUH_KEMBANG",
+
+    # 16. SARAF
+    "epilepsy": "SARAF",
+    "epilepsi": "SARAF",
+    "parkinson": "SARAF",
+    "neuropathy": "SARAF",
+    "neuropati": "SARAF",
+    "migraine": "SARAF",
+    "saraf": "SARAF",
+    "neurologi": "SARAF"
 }
+
 
 def categorize_diagnosis(diagnosis_text):
     """Categorize diagnosis into poliklinik"""
