@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import re
 
 # =========================
 # KONFIGURASI
@@ -22,7 +21,8 @@ def normalize_text(x: str) -> str:
     if pd.isna(x):
         return ""
     x = str(x).lower()
-    x = re.sub(r"\s+", " ", x).strip()
+    # Replace multiple whitespace with single space using built-in string methods
+    x = " ".join(x.split())
     return x
 
 # Kamus poli sederhana (baseline) - boleh Anda tambah keyword-nya
