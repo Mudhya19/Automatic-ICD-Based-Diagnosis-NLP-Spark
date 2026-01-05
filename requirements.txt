@@ -10,3 +10,7 @@ numpy>=1.21.0
 scipy>=1.7.0
 streamlit
 plotly
+xgboost>=2.0.0
+prophet
+scikit-learn
+ipywidgets
