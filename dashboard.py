@@ -228,12 +228,16 @@ st.markdown("""
 @st.cache_data
 def load_data():
     """Load data dari file CSV dengan beberapa alternatif lokasi file"""
-    # Daftar path yang akan dicoba
+    # Daftar path yang akan dicoba, termasuk untuk deployment ke Streamlit
     possible_paths = [
-        '/database/data/diagnosis_icd_2025.csv',  # Absolute path
-        '../database/data/diagnosis_icd_2025.csv', # Path relatif ke parent directory
+        'database/data/diagnosis_icd_2025.csv',    # Path relatif dari root proyek
         './database/data/diagnosis_icd_2025.csv', # Path relatif ke current directory
-        'database/data/diagnosis_icd_2025.csv'    # Path relatif tanpa awalan
+        '../database/data/diagnosis_icd_2025.csv', # Path relatif ke parent directory
+        '../../database/data/diagnosis_icd_2025.csv', # Path relatif ke grandparent directory
+        '/app/database/data/diagnosis_icd_2025.csv', # Path untuk container deployment
+        'data/diagnosis_icd_2025.csv',             # Alternatif path di folder data
+        './data/diagnosis_icd_2025.csv',           # Alternatif path relatif
+        'diagnosis_icd_2025.csv'                   # File langsung di root
     ]
     
     df = None
@@ -244,9 +248,13 @@ def load_data():
         try:
             df = pd.read_csv(path)
             found_path = path
+            st.success(f"✅ Data berhasil dimuat dari: {path}")  # Debug info
             break  # Keluar dari loop jika berhasil
         except FileNotFoundError:
             continue  # Lanjut ke path berikutnya jika gagal
+        except Exception as e:
+            # Tangani kemungkinan error lain selain FileNotFoundError
+            continue  # Tetap lanjut ke path berikutnya
     
     # Jika tetap tidak ada data yang berhasil dimuat
     if df is None:
