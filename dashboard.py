@@ -276,6 +276,8 @@ def create_sample_data():
 @st.cache_data
 def load_data():
     """Load data dari file CSV dengan beberapa alternatif lokasi file atau buat data dummy jika tidak ditemukan"""
+    import os
+    
     # Daftar path yang akan dicoba, termasuk untuk deployment ke Streamlit
     possible_paths = [
         'database/data/diagnosis_icd_2025.csv',    # Path relatif dari root proyek
@@ -285,7 +287,11 @@ def load_data():
         '/app/database/data/diagnosis_icd_2025.csv', # Path untuk container deployment
         'data/diagnosis_icd_2025.csv',             # Alternatif path di folder data
         './data/diagnosis_icd_2025.csv',           # Alternatif path relatif
-        'diagnosis_icd_2025.csv'                   # File langsung di root
+        'diagnosis_icd_2025.csv',                  # File langsung di root
+        os.path.join('database', 'data', 'diagnosis_icd_2025.csv'),  # Cross-platform path
+        os.path.join('.', 'database', 'data', 'diagnosis_icd_2025.csv'),  # Cross-platform path with current dir
+        os.path.join('..', 'database', 'data', 'diagnosis_icd_2025.csv'),  # Cross-platform path with parent dir
+        os.path.join('data', 'diagnosis_icd_2025.csv'),  # Cross-platform path in data dir
     ]
     
     df = None
@@ -319,6 +325,9 @@ def load_data():
 
         # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
         df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
+        
+        # Log successful data loading
+        st.success(f"Data loaded successfully with {len(df)} records from {found_path}")
     
     return df
 
