@@ -227,24 +227,43 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    """Load data dari file CSV"""
-    try:
-        # Load dari file lokal
-        df = pd.read_csv('/database/data/diagnosis_icd_2025.csv')
+    """Load data dari file CSV dengan beberapa alternatif lokasi file"""
+    # Daftar path yang akan dicoba
+    possible_paths = [
+        '/database/data/diagnosis_icd_2025.csv',  # Absolute path
+        '../database/data/diagnosis_icd_2025.csv', # Path relatif ke parent directory
+        './database/data/diagnosis_icd_2025.csv', # Path relatif ke current directory
+        'database/data/diagnosis_icd_2025.csv'    # Path relatif tanpa awalan
+    ]
+    
+    df = None
+    found_path = None
+    
+    # Coba setiap path sampai salah satu berhasil
+    for path in possible_paths:
+        try:
+            df = pd.read_csv(path)
+            found_path = path
+            break  # Keluar dari loop jika berhasil
+        except FileNotFoundError:
+            continue  # Lanjut ke path berikutnya jika gagal
+    
+    # Jika tetap tidak ada data yang berhasil dimuat
+    if df is None:
+        st.error("❌ File data tidak ditemukan di semua lokasi yang mungkin:")
+        for path in possible_paths:
+            st.error(f"   - {path}")
+        st.stop()  # Hentikan eksekusi jika file tidak ditemukan di mana pun
+    
+    # Parse tanggal
+    df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
+    
+    # Ensure the datetime column is properly formatted
+    df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
 
-        # Parse tanggal
-        df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
-        
-        # Ensure the datetime column is properly formatted
-        df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
-
-        # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
-        df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
-        return df
-    except FileNotFoundError:
-        # Jika file tidak ditemukan, tampilkan error
-        st.error("❌ File data tidak ditemukan: database/data/diagnosis_icd_2025.csv")
-        st.stop()  # Hentikan eksekusi jika file tidak ditemukan
+    # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
+    df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
+    return df
 
 # Load data
 df = load_data()
