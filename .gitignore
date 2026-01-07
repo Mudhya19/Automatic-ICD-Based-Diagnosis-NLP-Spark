@@ -33,8 +33,12 @@ wheels/
 .ipynb_checkpoints
 .ipynb
 
-# Data files
-.csv
+# Data files - specific files to ignore (excluding our required data files)
+*.tmp.csv
+*.temp.csv
+*output*.csv
+output/
+logs/
 *.json
 *.xls
 *.xlsx
