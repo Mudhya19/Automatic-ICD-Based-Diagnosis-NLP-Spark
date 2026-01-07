@@ -326,9 +326,18 @@ Automatic-ICD-Based-Diagnosis-NLP-Spark/
 
 1. Jalankan `streamlit run app.py` untuk memulai dashboard
 2. Dashboard menyediakan visualisasi hasil analisis dari 3 model ML:
+
    - XGBoost Classifier (Binary Classification)
    - Facebook Prophet (Time Series Forecasting)
    - Random Forest Classifier (Multi-class Classification)
+
+3. Fitur dashboard poliklinik:
+   - Filter berdasarkan kategori poliklinik (17 kategori spesifik)
+   - Distribusi pasien per poliklinik
+   - Analisis kinerja poliklinik
+   - Heatmap kunjungan per hari dan poliklinik
+   - Statistik poliklinik di sidebar
+   - Rekomendasi optimalisasi beban kerja poliklinik
 
 ### Hasil Analisis
 
