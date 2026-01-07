@@ -225,9 +225,57 @@ st.markdown("""
 # LOAD DATA
 # ============================================================================
 
+# Import libraries
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from datetime import datetime, timedelta
+import warnings
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+warnings.filterwarnings('ignore')
+
+# Fungsi untuk membuat data dummy jika file tidak ditemukan
+def create_sample_data():
+    """Create sample data for demonstration purposes when the main file is not available"""
+    n_samples = 1000  # Jumlah sample data
+    np.random.seed(42)  # Untuk hasil yang konsisten
+    
+    # Generate sample data
+    data = {
+        'id_pasien': range(1, n_samples + 1),
+        'tgl_registrasi': pd.date_range(start='2023-01', periods=n_samples, freq='D'),
+        'nm_dokter': np.random.choice(['Dr. Ahmad', 'Dr. Siti', 'Dr. Budi', 'Dr. Maya', 'Dr. Rina'], n_samples),
+        'jk': np.random.choice(['L', 'P'], n_samples, p=[0.48, 0.52]),
+        'umur_pasien': np.random.normal(45, 15, n_samples).astype(int),
+        'diagnosis_structured': np.random.choice([
+            'hypertension', 'diabetes mellitus', 'acute myocardial infarction', 'stroke',
+            'pneumonia', 'gastroesophageal reflux disease', 'osteoarthritis', 'depression',
+            'chronic kidney disease', 'chronic obstructive pulmonary disease', 'migraine', 'anemia'
+        ], n_samples)
+    }
+    
+    df = pd.DataFrame(data)
+    
+    # Ensure age is positive
+    df['umur_pasien'] = np.abs(df['umur_pasien'])
+    df['umur_pasien'] = df['umur_pasien'].clip(lower=1, upper=100)
+    
+    # Apply poli mapping
+    df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
+    
+    # Add other columns that might be expected
+    df['kompleksitas'] = np.random.choice(['LOW', 'MEDIUM', 'HIGH'], n_samples, p=[0.5, 0.35, 0.15])
+    
+    return df
+
 @st.cache_data
 def load_data():
-    """Load data dari file CSV dengan beberapa alternatif lokasi file"""
+    """Load data dari file CSV dengan beberapa alternatif lokasi file atau buat data dummy jika tidak ditemukan"""
     # Daftar path yang akan dicoba, termasuk untuk deployment ke Streamlit
     possible_paths = [
         'database/data/diagnosis_icd_2025.csv',    # Path relatif dari root proyek
@@ -248,7 +296,7 @@ def load_data():
         try:
             df = pd.read_csv(path)
             found_path = path
-            st.success(f"✅ Data berhasil dimuat dari: {path}")  # Debug info
+            st.success(f"✅ Data berhasil dimuat dari: {path}")  # Info bahwa file asli digunakan
             break  # Keluar dari loop jika berhasil
         except FileNotFoundError:
             continue  # Lanjut ke path berikutnya jika gagal
@@ -256,21 +304,22 @@ def load_data():
             # Tangani kemungkinan error lain selain FileNotFoundError
             continue  # Tetap lanjut ke path berikutnya
     
-    # Jika tetap tidak ada data yang berhasil dimuat
+    # Jika tetap tidak ada data yang berhasil dimuat, gunakan data dummy
     if df is None:
-        st.error("❌ File data tidak ditemukan di semua lokasi yang mungkin:")
-        for path in possible_paths:
-            st.error(f"   - {path}")
-        st.stop()  # Hentikan eksekusi jika file tidak ditemukan di mana pun
-    
-    # Parse tanggal
-    df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
-    
-    # Ensure the datetime column is properly formatted
-    df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
+        st.warning("⚠️ File data asli tidak ditemukan. Menggunakan data contoh untuk demonstrasi.")
+        st.info("Untuk menggunakan data asli Anda, pastikan file 'database/data/diagnosis_icd_2025.csv' telah ditambahkan ke repositori Anda.")
+        df = create_sample_data()
+    else:
+        # Proses data asli seperti sebelumnya
+        # Parse tanggal
+        df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
+        
+        # Ensure the datetime column is properly formatted
+        df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
 
-    # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
-    df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
+        # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
+        df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
+    
     return df
 
 # Load data
