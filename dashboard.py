@@ -230,7 +230,7 @@ def load_data():
     """Load data dari file CSV"""
     try:
         # Load dari file lokal
-        df = pd.read_csv('./database/data/diagnosis_icd_2025.csv')
+        df = pd.read_csv('/database/data/diagnosis_icd_2025.csv')
 
         # Parse tanggal
         df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
