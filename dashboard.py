@@ -529,7 +529,7 @@ with col1:
         showlegend=False,
         height=400
     )
-    st.plotly_chart(fig_age_hist, use_container_width=True)
+    st.plotly_chart(fig_age_hist, width='stretch')
 
 with col2:
     # KDE Plot using Plotly
@@ -594,7 +594,7 @@ with col2:
         showlegend=False,
         height=400
     )
-    st.plotly_chart(fig_age_kde, use_container_width=True)
+    st.plotly_chart(fig_age_kde, width='stretch')
 
 # ============================================================================
 # 3. DISTRIBUSI JENIS KELAMIN
@@ -624,7 +624,7 @@ with col1:
         showlegend=False,
         height=400
     )
-    st.plotly_chart(fig_gender_bar, theme="streamlit")
+    st.plotly_chart(fig_gender_bar, width='stretch', theme="streamlit")
 
 with col2:
     # Pie Chart
@@ -640,7 +640,7 @@ with col2:
         title='Proporsi Jenis Kelamin',
         height=400
     )
-    st.plotly_chart(fig_gender_pie, theme="streamlit")
+    st.plotly_chart(fig_gender_pie, width='stretch', theme="streamlit")
 
 # ============================================================================
 # 4. TOP 10 DIAGNOSIS ICD-10
@@ -671,7 +671,7 @@ fig_top_icd.update_layout(
     yaxis=dict(autorange="reversed")
 )
 
-st.plotly_chart(fig_top_icd, theme="streamlit")
+st.plotly_chart(fig_top_icd, width='stretch', theme="streamlit")
 
 # ============================================================================
 # 5. DISTRIBUSI PASIEN PER KATEGORI POLI
@@ -740,7 +740,7 @@ fig_poli.update_layout(
     height=600
 )
 
-st.plotly_chart(fig_poli, theme="streamlit")
+st.plotly_chart(fig_poli, width='stretch', theme="streamlit")
 
 # Add polyclinic-specific analytics
 st.markdown('<h2 class="sub-header">🏥 6. Analisis Kinerja Poliklinik</h2>', unsafe_allow_html=True)
@@ -796,7 +796,7 @@ with col1:
         yaxis_title='Poliklinik',
         height=400
     )
-    st.plotly_chart(fig_avg_age, theme="streamlit")
+    st.plotly_chart(fig_avg_age, width='stretch', theme="streamlit")
 
 with col2:
     # Gender distribution per polyclinic - include all categories
@@ -855,7 +855,7 @@ with col2:
             height=400,
             legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
         )
-        st.plotly_chart(fig_gender_poli, theme="streamlit")
+        st.plotly_chart(fig_gender_poli, width='stretch', theme="streamlit")
     else:
         st.write("Tidak ada data pasien untuk analisis distribusi jenis kelamin per poliklinik.")
 
@@ -888,7 +888,7 @@ fig_monthly.update_layout(
     hovermode='x unified'
 )
 
-st.plotly_chart(fig_monthly, theme="streamlit")
+st.plotly_chart(fig_monthly, width='stretch', theme="streamlit")
 
 # ============================================================================
 # 7. TREN KUNJUNGAN PER HARI DALAM SEMINGGU
@@ -919,7 +919,7 @@ fig_daily.update_layout(
     height=400
 )
 
-st.plotly_chart(fig_daily, theme="streamlit")
+st.plotly_chart(fig_daily, width='stretch', theme="streamlit")
 
 # ============================================================================
 # 7B. DISTRIBUSI KUNJUNGAN PER HARI DALAM SEMINGGU BERDASARKAN POLIKLINIK
@@ -963,7 +963,7 @@ if not df_filtered_actual.empty:
         height=500
     )
 
-    st.plotly_chart(fig_heatmap, theme="streamlit")
+    st.plotly_chart(fig_heatmap, width='stretch', theme="streamlit")
 else:
     st.write("Tidak ada data pasien untuk analisis heatmap hari vs poliklinik.")
 
@@ -995,7 +995,7 @@ fig_doctors.update_layout(
     height=500
 )
 
-st.plotly_chart(fig_doctors, theme="streamlit")
+st.plotly_chart(fig_doctors, width='stretch', theme="streamlit")
 
 # ============================================================================
 # 9. ANALISIS KOMPLEKSITAS DIAGNOSIS
@@ -1025,7 +1025,7 @@ with col1:
             height=400
         )
 
-        st.plotly_chart(fig_complexity_bar, theme="streamlit")
+        st.plotly_chart(fig_complexity_bar, width='stretch', theme="streamlit")
 
 with col2:
     # Stacked Bar Kompleksitas per Poli
@@ -1060,7 +1060,7 @@ with col2:
                 legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
             )
     
-            st.plotly_chart(fig_complexity_stack, theme="streamlit")
+            st.plotly_chart(fig_complexity_stack, width='stretch', theme="streamlit")
         else:
             st.write("Tidak ada data pasien untuk analisis kompleksitas per poliklinik.")
 
