@@ -34,7 +34,7 @@ wheels/
 .ipynb
 
 # Data files
-*.csv
+.csv
 *.json
 *.xls
 *.xlsx
