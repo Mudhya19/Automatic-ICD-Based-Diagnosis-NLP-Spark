@@ -374,7 +374,8 @@ poli_categories = [
     'PARU',
     'ANAK',
     'KULIT & KELAMIN',
-    'TUMBUH KEMBANG PED. SOSIAL DAN SARAF'
+    'TUMBUH KEMBANG PED. SOSIAL',
+    'SARAF'
 ]
 all_poli = poli_categories
 selected_poli = st.sidebar.multiselect(
@@ -709,7 +710,8 @@ all_poli_cats = [
     'PARU',
     'ANAK',
     'KULIT & KELAMIN',
-    'TUMBUH KEMBANG PED. SOSIAL DAN SARAF'
+    'TUMBUH KEMBANG PED. SOSIAL',
+    'SARAF'
 ]
 
 # Initialize a series with all categories and zero counts
@@ -775,7 +777,8 @@ with col1:
         'PARU',
         'ANAK',
         'KULIT & KELAMIN',
-        'TUMBUH KEMBANG PED. SOSIAL DAN SARAF'
+        'TUMBUH KEMBANG PED. SOSIAL',
+        'SARAF'
     ]
     
     # Calculate average age only for actual patient records (id_pasien > 0)
@@ -826,7 +829,8 @@ with col2:
         'PARU',
         'ANAK',
         'KULIT & KELAMIN',
-        'TUMBUH KEMBANG PED. SOSIAL DAN SARAF'
+        'TUMBUH KEMBANG PED. SOSIAL',
+        'SARAF'
     ]
     
     # Use only actual patient records (id_pasien > 0)
