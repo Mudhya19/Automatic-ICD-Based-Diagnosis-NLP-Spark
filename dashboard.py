@@ -227,40 +227,6 @@ st.markdown("""
 
 # Note: Libraries already imported at the beginning of the file
 
-# Fungsi untuk membuat data dummy jika file tidak ditemukan
-def create_sample_data():
-    """Create sample data for demonstration purposes when the main file is not available"""
-    n_samples = 1000  # Jumlah sample data
-    np.random.seed(42)  # Untuk hasil yang konsisten
-    
-    # Generate sample data
-    data = {
-        'id_pasien': range(1, n_samples + 1),
-        'tgl_registrasi': pd.date_range(start='2023-01', periods=n_samples, freq='D'),
-        'nm_dokter': np.random.choice(['Dr. Ahmad', 'Dr. Siti', 'Dr. Budi', 'Dr. Maya', 'Dr. Rina'], n_samples),
-        'jk': np.random.choice(['L', 'P'], n_samples, p=[0.48, 0.52]),
-        'umur_pasien': np.random.normal(45, 15, n_samples).astype(int),
-        'diagnosis_structured': np.random.choice([
-            'hypertension', 'diabetes mellitus', 'acute myocardial infarction', 'stroke',
-            'pneumonia', 'gastroesophageal reflux disease', 'osteoarthritis', 'depression',
-            'chronic kidney disease', 'chronic obstructive pulmonary disease', 'migraine', 'anemia'
-        ], n_samples)
-    }
-    
-    df = pd.DataFrame(data)
-    
-    # Ensure age is positive
-    df['umur_pasien'] = np.abs(df['umur_pasien'])
-    df['umur_pasien'] = df['umur_pasien'].clip(lower=1, upper=100)
-    
-    # Apply poli mapping
-    df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
-    
-    # Add other columns that might be expected
-    df['kompleksitas'] = np.random.choice(['LOW', 'MEDIUM', 'HIGH'], n_samples, p=[0.5, 0.35, 0.15])
-    
-    return df
-
 @st.cache_data
 def load_data():
     """Load data dari file CSV dengan pendekatan robust untuk lingkungan lokal dan deployment"""
