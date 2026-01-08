@@ -235,55 +235,100 @@ def load_data():
     
     # Daftar semua kemungkinan path untuk mencari file data
     possible_paths = [
-        # Path untuk deployment (Streamlit Cloud, Heroku, dsb)
-        "database/data/diagnosis_icd_2025.csv",
-        "./database/data/diagnosis_icd_2025.csv",
-        
-        # Path untuk lingkungan lokal
-        os.path.join(os.getcwd(), "database", "data", "diagnosis_icd_2025.csv"),
-        os.path.join(os.path.dirname(__file__), "database", "data", "diagnosis_icd_2025.csv"),
-        
-        # Path absolut berbasis root repo
-        str(Path(__file__).resolve().parent / "database" / "data" / "diagnosis_icd_2025.csv"),
-        
-        # Alternatif path
-        "data/diagnosis_icd_2025.csv",
-        "./data/diagnosis_icd_2025.csv",
+        # Path utama yang diminta - dataset/diagnosis_icd_2025.csv
+        "dataset/diagnosis_icd_2025.csv",
+        "./dataset/diagnosis_icd_2025.csv",
+        str(Path(__file__).resolve().parent / "dataset" / "diagnosis_icd_2025.csv"),
+        os.path.join(os.getcwd(), "dataset", "diagnosis_icd_2025.csv"),
+        os.path.join(os.path.dirname(__file__), "dataset", "diagnosis_icd_2025.csv"),
     ]
     
     df = None
     found_path = None
+    file_extension = None
     
     # Coba setiap path sampai salah satu berhasil
     for path in possible_paths:
         try:
             if os.path.exists(path):
-                df = pd.read_csv(path)
-                found_path = path
-                st.success(f"✅ Data berhasil dimuat dari: {path}")
+                # Check file extension to determine how to read
+                if path.endswith('.csv'):
+                    df = pd.read_csv(path)
+                    file_extension = 'csv'
+                elif path.endswith('.xlsx') or path.endswith('.xls'):
+                    df = pd.read_excel(path)
+                    file_extension = 'excel'
                 
-                # Proses data asli seperti sebelumnya
-                # Parse tanggal
-                df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
-                
-                # Ensure the datetime column is properly formatted
-                df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
+                if df is not None:
+                    found_path = path
+                    st.success(f"✅ Data berhasil dimuat dari: {path} (format: {file_extension})")
+                    
+                    # Proses data asli seperti sebelumnya
+                    # Parse tanggal - coba beberapa kolom yang mungkin berisi tanggal
+                    if 'tgl_registrasi' in df.columns:
+                        df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
+                    elif 'date' in df.columns:
+                        df['tgl_registrasi'] = pd.to_datetime(df['date'], errors='coerce')
+                    elif 'tanggal' in df.columns:
+                        df['tgl_registrasi'] = pd.to_datetime(df['tanggal'], errors='coerce')
+                    elif df.select_dtypes(include=['object']).columns[0] if len(df.select_dtypes(include=['object']).columns) > 0 else None:
+                        # Jika tidak ada kolom tanggal yang jelas, coba kolom pertama yang bertipe object
+                        date_col = df.select_dtypes(include=['object']).columns[0]
+                        df['tgl_registrasi'] = pd.to_datetime(df[date_col], errors='coerce')
+                    else:
+                        # Jika tidak ada kolom tanggal, buat kolom tanggal dummy
+                        df['tgl_registrasi'] = pd.date_range(start='2023-01-01', periods=len(df), freq='D')
+                    
+                    # Ensure the datetime column is properly formatted
+                    df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
 
-                # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
-                df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
-                
-                # Log successful data loading
-                st.success(f"Data loaded successfully with {len(df)} records from {found_path}")
-                break  # Keluar dari loop jika berhasil
-                
+                    # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
+                    if 'diagnosis_structured' in df.columns:
+                        df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
+                    elif 'diagnosis' in df.columns:
+                        df['poli_category'] = df['diagnosis'].apply(map_diagnosis_to_poli)
+                    elif 'icd_code' in df.columns:
+                        df['poli_category'] = df['icd_code'].apply(map_diagnosis_to_poli)
+                    else:
+                        # Jika tidak ada kolom diagnosis yang jelas, gunakan kolom pertama
+                        text_cols = df.select_dtypes(include=['object']).columns
+                        if len(text_cols) > 0:
+                            df['poli_category'] = df[text_cols[0]].apply(map_diagnosis_to_poli)
+                        else:
+                            # Jika tetap tidak ada, isi dengan default
+                            df['poli_category'] = 'PENYAKIT DALAM'
+                    
+                    # Log successful data loading
+                    st.success(f"Data loaded successfully with {len(df)} records from {found_path}")
+                    break  # Keluar dari loop jika berhasil
+                    
         except Exception as e:
             # Lanjut ke path berikutnya jika gagal
             continue
     
     # Jika tetap tidak ada data yang berhasil dimuat, tampilkan error
     if df is None:
+        # Uncomment the following lines if you need to debug path issues:
+        # st.write("### 🔍 DEBUG INFORMATION (for path troubleshooting)")
+        # st.write("**Current Working Directory:**", os.getcwd())
+        # st.write("**Files in current directory:**", os.listdir('.'))
+        # st.write("**Project root path:**", Path(__file__).resolve().parent)
+        # st.write("**Looking for database folder at:**", Path(__file__).resolve().parent / "database")
+        # if os.path.exists("database"):
+        #     st.write("**Database folder contents:**", os.listdir("database"))
+        #     if os.path.exists("database/data"):
+        #         st.write("**Database/data folder contents:**", os.listdir("database/data"))
+        #     if os.path.exists("database/dataset"):
+        #         st.write("**Database/dataset folder contents:**", os.listdir("database/dataset"))
+        # st.write("---")
+        
         st.error("❌ File data tidak ditemukan!")
-        st.error("Pastikan file 'database/data/diagnosis_icd_2025.csv' telah ditambahkan ke repositori Anda.")
+        st.error("Pastikan salah satu file berikut ada di repositori Anda:")
+        st.error("- database/data/diagnosis_icd_2025.csv")
+        st.error("- database/dataset/diagnosis_icd_2025.csv")
+        st.error("- data/diagnosis_icd_2025.csv")
+        st.error("- database/diagnosis_icd_2025.csv")
+        st.error("Atau file dengan format .xlsx")
         st.stop()  # Stop execution if no data is found
     
     return df
