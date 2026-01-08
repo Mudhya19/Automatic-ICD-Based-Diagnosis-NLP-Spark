@@ -215,9 +215,8 @@ st.markdown("""
         padding: 1rem;
     }
     /* Menambahkan warna teks global */
-        /* Fix for text visibility - removing the forced white text color */
         body, h1, h2, h3, h4, h5, h6, p, div, span, li, td, th {
-            color: #2c3e50 !important;
+            color: #FFFFFF !important;
         }
 </style>
 """, unsafe_allow_html=True)
@@ -264,56 +263,61 @@ def create_sample_data():
 
 @st.cache_data
 def load_data():
-    """Load data dari file CSV dengan path absolut berbasis root repo untuk Streamlit Cloud"""
+    """Load data dari file CSV dengan pendekatan robust untuk lingkungan lokal dan deployment"""
     import os
     from pathlib import Path
     
-    # Path absolut berbasis root repo - solusi untuk Streamlit Cloud
-    BASE_DIR = Path(__file__).resolve().parent
-    PROJECT_ROOT = BASE_DIR  # karena dashboard.py ada di root
-    
-    # Path yang valid di Streamlit Cloud
-    DATA_PATH = PROJECT_ROOT / "database" / "data" / "diagnosis_icd_2025.csv"
-    
-    # Debug info - uncomment this section if you need to debug path issues in Streamlit Cloud
-    # st.write("### 🔍 DEBUG INFORMATION (for Streamlit Cloud deployment)")
-    # st.write("**Current Working Directory:**", os.getcwd())
-    # st.write("**Files in current directory:**", os.listdir())
-    # st.write("**Project root path:**", PROJECT_ROOT)
-    # st.write("**Data file path being used:**", DATA_PATH)
-    # if os.path.exists(PROJECT_ROOT / "database"):
-    #     st.write("**Database folder contents:**", os.listdir(PROJECT_ROOT / "database"))
-    # if os.path.exists(PROJECT_ROOT / "database" / "data"):
-    #     st.write("**Data folder contents:**", os.listdir(PROJECT_ROOT / "database" / "data"))
-    # st.write("---")
+    # Daftar semua kemungkinan path untuk mencari file data
+    possible_paths = [
+        # Path untuk deployment (Streamlit Cloud, Heroku, dsb)
+        "database/data/diagnosis_icd_2025.csv",
+        "./database/data/diagnosis_icd_2025.csv",
+        
+        # Path untuk lingkungan lokal
+        os.path.join(os.getcwd(), "database", "data", "diagnosis_icd_2025.csv"),
+        os.path.join(os.path.dirname(__file__), "database", "data", "diagnosis_icd_2025.csv"),
+        
+        # Path absolut berbasis root repo
+        str(Path(__file__).resolve().parent / "database" / "data" / "diagnosis_icd_2025.csv"),
+        
+        # Alternatif path
+        "data/diagnosis_icd_2025.csv",
+        "./data/diagnosis_icd_2025.csv",
+    ]
     
     df = None
+    found_path = None
     
-    try:
-        # Coba load dari path utama
-        df = pd.read_csv(DATA_PATH)
-        st.success(f"✅ Data berhasil dimuat dari: {DATA_PATH}")
-        
-        # Proses data asli seperti sebelumnya
-        # Parse tanggal
-        df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
-        
-        # Ensure the datetime column is properly formatted
-        df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
+    # Coba setiap path sampai salah satu berhasil
+    for path in possible_paths:
+        try:
+            if os.path.exists(path):
+                df = pd.read_csv(path)
+                found_path = path
+                st.success(f"✅ Data berhasil dimuat dari: {path}")
+                
+                # Proses data asli seperti sebelumnya
+                # Parse tanggal
+                df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
+                
+                # Ensure the datetime column is properly formatted
+                df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'])
 
-        # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
-        df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
-        
-        # Log successful data loading
-        st.success(f"Data loaded successfully with {len(df)} records from {DATA_PATH}")
-        
-    except FileNotFoundError:
+                # Buat kolom poli_category berdasarkan mapping dari diagnosis_structured
+                df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
+                
+                # Log successful data loading
+                st.success(f"Data loaded successfully with {len(df)} records from {found_path}")
+                break  # Keluar dari loop jika berhasil
+                
+        except Exception as e:
+            # Lanjut ke path berikutnya jika gagal
+            continue
+    
+    # Jika tetap tidak ada data yang berhasil dimuat, gunakan data dummy
+    if df is None:
         st.warning("⚠️ File data asli tidak ditemukan. Menggunakan data contoh untuk demonstrasi.")
         st.info("Untuk menggunakan data asli Anda, pastikan file 'database/data/diagnosis_icd_2025.csv' telah ditambahkan ke repositori Anda.")
-        df = create_sample_data()
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        st.warning("Menggunakan data contoh untuk demonstrasi.")
         df = create_sample_data()
     
     return df
