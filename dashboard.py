@@ -280,11 +280,11 @@ def load_data():
             # Lanjut ke path berikutnya jika gagal
             continue
     
-    # Jika tetap tidak ada data yang berhasil dimuat, gunakan data dummy
+    # Jika tetap tidak ada data yang berhasil dimuat, tampilkan error
     if df is None:
-        st.warning("⚠️ File data asli tidak ditemukan. Menggunakan data contoh untuk demonstrasi.")
-        st.info("Untuk menggunakan data asli Anda, pastikan file 'database/data/diagnosis_icd_2025.csv' telah ditambahkan ke repositori Anda.")
-        df = create_sample_data()
+        st.error("❌ File data tidak ditemukan!")
+        st.error("Pastikan file 'database/data/diagnosis_icd_2025.csv' telah ditambahkan ke repositori Anda.")
+        st.stop()  # Stop execution if no data is found
     
     return df
 
