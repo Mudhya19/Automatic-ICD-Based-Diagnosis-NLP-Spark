@@ -215,8 +215,9 @@ st.markdown("""
         padding: 1rem;
     }
     /* Menambahkan warna teks global */
+        /* Fix for text visibility - removing the forced white text color */
         body, h1, h2, h3, h4, h5, h6, p, div, span, li, td, th {
-            color: #FFFFFF !important;
+            color: #2c3e50 !important;
         }
 </style>
 """, unsafe_allow_html=True)
@@ -225,19 +226,7 @@ st.markdown("""
 # LOAD DATA
 # ============================================================================
 
-# Import libraries
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
-import warnings
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-warnings.filterwarnings('ignore')
+# Note: Libraries already imported at the beginning of the file
 
 # Fungsi untuk membuat data dummy jika file tidak ditemukan
 def create_sample_data():
@@ -275,47 +264,36 @@ def create_sample_data():
 
 @st.cache_data
 def load_data():
-    """Load data dari file CSV dengan beberapa alternatif lokasi file atau buat data dummy jika tidak ditemukan"""
+    """Load data dari file CSV dengan path absolut berbasis root repo untuk Streamlit Cloud"""
     import os
+    from pathlib import Path
     
-    # Daftar path yang akan dicoba, termasuk untuk deployment ke Streamlit
-    possible_paths = [
-        'database/data/diagnosis_icd_2025.csv',    # Path relatif dari root proyek
-        './database/data/diagnosis_icd_2025.csv', # Path relatif ke current directory
-        '../database/data/diagnosis_icd_2025.csv', # Path relatif ke parent directory
-        '../../database/data/diagnosis_icd_2025.csv', # Path relatif ke grandparent directory
-        '/app/database/data/diagnosis_icd_2025.csv', # Path untuk container deployment
-        'data/diagnosis_icd_2025.csv',             # Alternatif path di folder data
-        './data/diagnosis_icd_2025.csv',           # Alternatif path relatif
-        'diagnosis_icd_2025.csv',                  # File langsung di root
-        os.path.join('database', 'data', 'diagnosis_icd_2025.csv'),  # Cross-platform path
-        os.path.join('.', 'database', 'data', 'diagnosis_icd_2025.csv'),  # Cross-platform path with current dir
-        os.path.join('..', 'database', 'data', 'diagnosis_icd_2025.csv'),  # Cross-platform path with parent dir
-        os.path.join('data', 'diagnosis_icd_2025.csv'),  # Cross-platform path in data dir
-    ]
+    # Path absolut berbasis root repo - solusi untuk Streamlit Cloud
+    BASE_DIR = Path(__file__).resolve().parent
+    PROJECT_ROOT = BASE_DIR  # karena dashboard.py ada di root
+    
+    # Path yang valid di Streamlit Cloud
+    DATA_PATH = PROJECT_ROOT / "database" / "data" / "diagnosis_icd_2025.csv"
+    
+    # Debug info - uncomment this section if you need to debug path issues in Streamlit Cloud
+    # st.write("### 🔍 DEBUG INFORMATION (for Streamlit Cloud deployment)")
+    # st.write("**Current Working Directory:**", os.getcwd())
+    # st.write("**Files in current directory:**", os.listdir())
+    # st.write("**Project root path:**", PROJECT_ROOT)
+    # st.write("**Data file path being used:**", DATA_PATH)
+    # if os.path.exists(PROJECT_ROOT / "database"):
+    #     st.write("**Database folder contents:**", os.listdir(PROJECT_ROOT / "database"))
+    # if os.path.exists(PROJECT_ROOT / "database" / "data"):
+    #     st.write("**Data folder contents:**", os.listdir(PROJECT_ROOT / "database" / "data"))
+    # st.write("---")
     
     df = None
-    found_path = None
     
-    # Coba setiap path sampai salah satu berhasil
-    for path in possible_paths:
-        try:
-            df = pd.read_csv(path)
-            found_path = path
-            st.success(f"✅ Data berhasil dimuat dari: {path}")  # Info bahwa file asli digunakan
-            break  # Keluar dari loop jika berhasil
-        except FileNotFoundError:
-            continue  # Lanjut ke path berikutnya jika gagal
-        except Exception as e:
-            # Tangani kemungkinan error lain selain FileNotFoundError
-            continue  # Tetap lanjut ke path berikutnya
-    
-    # Jika tetap tidak ada data yang berhasil dimuat, gunakan data dummy
-    if df is None:
-        st.warning("⚠️ File data asli tidak ditemukan. Menggunakan data contoh untuk demonstrasi.")
-        st.info("Untuk menggunakan data asli Anda, pastikan file 'database/data/diagnosis_icd_2025.csv' telah ditambahkan ke repositori Anda.")
-        df = create_sample_data()
-    else:
+    try:
+        # Coba load dari path utama
+        df = pd.read_csv(DATA_PATH)
+        st.success(f"✅ Data berhasil dimuat dari: {DATA_PATH}")
+        
         # Proses data asli seperti sebelumnya
         # Parse tanggal
         df['tgl_registrasi'] = pd.to_datetime(df['tgl_registrasi'], format='%d/%m/%Y', errors='coerce')
@@ -327,7 +305,16 @@ def load_data():
         df['poli_category'] = df['diagnosis_structured'].apply(map_diagnosis_to_poli)
         
         # Log successful data loading
-        st.success(f"Data loaded successfully with {len(df)} records from {found_path}")
+        st.success(f"Data loaded successfully with {len(df)} records from {DATA_PATH}")
+        
+    except FileNotFoundError:
+        st.warning("⚠️ File data asli tidak ditemukan. Menggunakan data contoh untuk demonstrasi.")
+        st.info("Untuk menggunakan data asli Anda, pastikan file 'database/data/diagnosis_icd_2025.csv' telah ditambahkan ke repositori Anda.")
+        df = create_sample_data()
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        st.warning("Menggunakan data contoh untuk demonstrasi.")
+        df = create_sample_data()
     
     return df
 
